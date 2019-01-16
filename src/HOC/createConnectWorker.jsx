@@ -12,13 +12,12 @@ function isEqual(a, b) {
 // 'createConnectWorker' should be async.
 // It should create new bridge only if mapStateToProps selector was provided or null argument was explicitly passed instead.
 // Otherwise there is a risk of a race condition.
-const createConnectWorker = ({ bridgeKey: id, storeWorker, mapDispatchToProps, propsSelector }) => (
+const createConnectWorker = (storeWorker, { bridgeId, mapDispatchToProps, propsSelector }) => (
     WrappedComponent,
     Loader,
 ) => {
-    const signedStoreWorker = new StoreWorkerBridge({
-        worker: storeWorker,
-        messageKey: id,
+    const signedStoreWorker = new StoreWorkerBridge(storeWorker, {
+        bridgeId,
         propsSelectorProvided: propsSelector !== undefined,
     });
 

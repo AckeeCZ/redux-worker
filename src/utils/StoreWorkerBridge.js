@@ -2,22 +2,22 @@ import * as messagesIn from '../services/messagesIn';
 import messageTypesOut from '../services/messageTypesOut';
 
 /*
-	receive seleceted messages (only messages where message.key === messageKey)
+	receive seleceted messages (only messages where message.key === bridgeId)
 	send 
 	NOTE: what about missed messages? (received message before the listener is set up)
 */
-function StoreWorkerBridge({ worker, messageKey, propsSelectorProvided }) {
+function StoreWorkerBridge(worker, { bridgeId, propsSelectorProvided }) {
     const handlers = {
         stateChanged: null,
         propsSelector: null,
     };
 
-    const dispatch = messagesIn.dispatch(messageKey);
+    const dispatch = messagesIn.dispatch(bridgeId);
 
     const messageHandler = event => {
         const message = event.data;
 
-        if (message.key !== messageKey) {
+        if (message.key !== bridgeId) {
             return;
         }
 
@@ -28,7 +28,7 @@ function StoreWorkerBridge({ worker, messageKey, propsSelectorProvided }) {
 
             case messageTypesOut.REQUEST_COMPONENT_PROPS: {
                 const selectedProps = handlers.propsSelector();
-                worker.postMessage(messagesIn.sendComponentProps(messageKey, selectedProps));
+                worker.postMessage(messagesIn.sendComponentProps(bridgeId, selectedProps));
                 break;
             }
 
@@ -56,7 +56,7 @@ function StoreWorkerBridge({ worker, messageKey, propsSelectorProvided }) {
             handlers.stateChanged = handler;
 
             worker.addEventListener('message', messageHandler, false);
-            worker.postMessage(messagesIn.subscribe(messageKey, { propsSelectorProvided }));
+            worker.postMessage(messagesIn.subscribe(bridgeId, { propsSelectorProvided }));
         },
 
         removeStateObserver() {
@@ -65,7 +65,7 @@ function StoreWorkerBridge({ worker, messageKey, propsSelectorProvided }) {
             }
 
             worker.removeEventListener('message', messageHandler, false);
-            worker.postMessage(messagesIn.unsubscribe(messageKey));
+            worker.postMessage(messagesIn.unsubscribe(bridgeId));
         },
 
         postAction(action) {

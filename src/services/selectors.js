@@ -1,7 +1,7 @@
-const selectors = {};
+const selectors = new Map();
 
-function assertInput(bridgeKey, mapStateToProps) {
-    if (selectors[bridgeKey]) {
+function assertInput(bridgeId, mapStateToProps) {
+    if (selectors.has(bridgeId)) {
         // TODO:
         throw new Error(`[collision occured]`);
     }
@@ -11,29 +11,22 @@ function assertInput(bridgeKey, mapStateToProps) {
     }
 }
 
-export const registerContainerSelector = (bridgeKey, mapStateToProps) => {
-    console.log({
-        bridgeKey,
-        mapStateToProps,
-    });
+export const registerContainerSelector = (bridgeId, mapStateToProps) => {
+    assertInput(bridgeId, mapStateToProps);
 
-    // assertInput(bridgeKey, mapStateToProps.default);
+    selectors.set(bridgeId, mapStateToProps);
 
-    selectors[bridgeKey] = mapStateToProps;
+    // TODO: now create the new bridge for this bridgeId
 };
 
-export const clearContainerSelectors = () => {
-    selectors.clear();
-};
-
-export default function selector(state, ownProps, bridgeKey) {
-    const mapStateToProps = selectors[bridgeKey];
+export default function selector(state, ownProps, bridgeId) {
+    const mapStateToProps = selectors.get(bridgeId);
 
     if (mapStateToProps) {
-        return mapStateToProps(state, ownProps, bridgeKey);
+        return mapStateToProps(state, ownProps, bridgeId);
     }
 
-    console.error(`No 'mapStateToProps' selector found for the '${bridgeKey}' bridge key.`);
+    console.error(`No 'mapStateToProps' selector was found for the '${bridgeId}' bridge key.`);
 
     return state;
 }

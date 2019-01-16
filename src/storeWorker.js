@@ -2,8 +2,8 @@ import messageTypesIn from './services/messageTypesIn';
 import * as messagesOut from './services/messagesOut';
 import selector from './services/selectors';
 
-const createRequestComponentProps = messageKey => () => {
-    self.postMessage(messagesOut.requestComponentProps(messageKey));
+const createRequestComponentProps = bridgeId => () => {
+    self.postMessage(messagesOut.requestComponentProps(bridgeId));
 };
 
 const unsubscribes = {};
@@ -36,9 +36,9 @@ export const initMessageHandler = (configureStore, getContainerSelectors) => {
         self.postMessage(messagesOut.stateChanged(key, nextState));
     };
 
-    const createStateChanged = messageKey => props => {
+    const createStateChanged = bridgeId => props => {
         stateChanged({
-            key: messageKey,
+            bridgeId,
             props,
         });
     };
@@ -55,10 +55,10 @@ export const initMessageHandler = (configureStore, getContainerSelectors) => {
             case messageTypesIn.SUBSCRIBE: {
                 const { propsSelectorProvided } = message.options;
                 const stateChangeHandler = propsSelectorProvided
-                    ? createRequestComponentProps(message.key)
-                    : createStateChanged(message.key);
+                    ? createRequestComponentProps(message.bridgeId)
+                    : createStateChanged(message.bridgeId);
 
-                unsubscribes[message.key] = store.subscribe(stateChangeHandler);
+                unsubscribes[message.bridgeId] = store.subscribe(stateChangeHandler);
 
                 // post initial message with initial state to hydrate the component
                 stateChangeHandler();
@@ -67,11 +67,11 @@ export const initMessageHandler = (configureStore, getContainerSelectors) => {
             }
 
             case messageTypesIn.UNSUBCRIBE: {
-                const { key } = message;
-                const unsubscribe = unsubscribes[key];
+                const { bridgeId } = message;
+                const unsubscribe = unsubscribes[bridgeId];
 
                 if (unsubscribe) {
-                    delete unsubscribes[key];
+                    delete unsubscribes[bridgeId];
                     unsubscribe();
                 }
                 break;
@@ -89,6 +89,7 @@ export const initMessageHandler = (configureStore, getContainerSelectors) => {
             }
 
             default:
+            // workerOnMessageHandler(store, message, self.postMessage);
         }
     };
 };
