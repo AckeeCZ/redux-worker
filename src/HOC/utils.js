@@ -1,10 +1,10 @@
-export const createActionCreators = (dispatch, mapDispatchToProps) => {
+export const createActionCreators = (dispatch, mapDispatchToProps, ownProps) => {
     if (mapDispatchToProps === undefined || mapDispatchToProps === null) {
         return {};
     }
 
     if (typeof mapDispatchToProps === 'function') {
-        return mapDispatchToProps(dispatch);
+        return mapDispatchToProps(dispatch, ownProps);
     }
 
     if (typeof mapDispatchToProps === 'object' && !Array.isArray(mapDispatchToProps)) {

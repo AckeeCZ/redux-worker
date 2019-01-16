@@ -3,17 +3,43 @@ import StoreWorkerBridge from '../utils/StoreWorkerBridge';
 
 import { createActionCreators } from './utils';
 
-const createConnectWorker = ({ id, storeWorker, mapDispatchToProps, propsSelector }) => WrappedComponent => {
+// TODO: use some better utility
+function isEqual(a, b) {
+    return JSON.stringify(a) === JSON.stringify(b);
+}
+
+// TODO:
+// 'createConnectWorker' should be async.
+// It should create new bridge only if mapStateToProps selector was provided or null argument was explicitly passed instead.
+// Otherwise there is a risk of a race condition.
+const createConnectWorker = ({ bridgeKey: id, storeWorker, mapDispatchToProps, propsSelector }) => (
+    WrappedComponent,
+    Loader,
+) => {
     const signedStoreWorker = new StoreWorkerBridge({
         worker: storeWorker,
         messageKey: id,
         propsSelectorProvided: propsSelector !== undefined,
     });
 
-    const actionCreators = createActionCreators(signedStoreWorker.postAction, mapDispatchToProps);
+    const mapDispatchToPropsWithOwnProps = propsSelector && typeof mapDispatchToProps === 'function';
+
+    function getActionCreators(props) {
+        return createActionCreators(
+            signedStoreWorker.postAction,
+            mapDispatchToProps,
+            mapDispatchToPropsWithOwnProps ? propsSelector(props) : undefined,
+        );
+    }
 
     class StoreWorkerConnector extends React.Component {
         state = null;
+
+        constructor(props) {
+            super(props);
+
+            this.actionCreators = getActionCreators(props);
+        }
 
         componentDidMount() {
             if (propsSelector) {
@@ -25,6 +51,12 @@ const createConnectWorker = ({ id, storeWorker, mapDispatchToProps, propsSelecto
             });
         }
 
+        componentDidUpdate(prevProps) {
+            if (mapDispatchToPropsWithOwnProps && !isEqual(this.props, prevProps)) {
+                this.actionCreators = getActionCreators(prevProps);
+            }
+        }
+
         componentWillUnmount() {
             signedStoreWorker.removeStateObserver();
 
@@ -34,9 +66,8 @@ const createConnectWorker = ({ id, storeWorker, mapDispatchToProps, propsSelecto
         }
 
         render() {
-            // TODO:
             if (!this.state) {
-                return null;
+                return Loader ? <Loader /> : null;
             }
 
             return (
@@ -44,7 +75,7 @@ const createConnectWorker = ({ id, storeWorker, mapDispatchToProps, propsSelecto
                     {...{
                         ...this.props,
                         ...this.state,
-                        ...actionCreators,
+                        ...this.actionCreators,
                         dispatch: signedStoreWorker.postAction,
                     }}
                 />
