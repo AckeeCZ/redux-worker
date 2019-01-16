@@ -3,6 +3,9 @@
         "browser": true
     },
     "extends": ["ackee", "prettier"],
+    "rules": {
+        "no-restricted-globals": "off"
+    },
     "parser": "babel-eslint",
     "parserOptions": {
         "ecmaFeatures": {
