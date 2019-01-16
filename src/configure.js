@@ -1,28 +1,30 @@
-import createConnectWorker from './HOC/createConnectWorker';
-import * as messagesIn from './services/messagesIn';
-import * as defaultConfig from './config';
 import mergeConfigs from './utils/mergeConfigs';
-import startTasksDurationWatcher from './utils/tasksDurationWatcher';
+import * as messagesIn from './services/messagesIn';
+
+import { createConnectWorker } from './modules/bridge';
+import { startTasksDurationWatcher, config as taskDurationWatcherConfig } from './modules/task-duration-watcher';
+
+const defaultConfig = {
+    taskDurationWatcher: taskDurationWatcherConfig,
+};
 
 function configure(storeWorker, customConfig) {
     const options = mergeConfigs(defaultConfig, customConfig);
 
     if (options.taskDurationWatcher.enabled) {
-        const { unrespondingTimeout } = options.taskDurationWatcher;
-
         startTasksDurationWatcher(storeWorker, {
-            taskDurationTimeout: unrespondingTimeout,
+            taskDurationTimeout: options.taskDurationWatcher.unrespondingTimeout,
         });
     }
 
     storeWorker.postMessage(messagesIn.setOptionsRequest(options));
 
     return {
-        connectWorker(bridgeId, mapDispatchToProps, propsSelector) {
+        connectWorker(bridgeId, mapDispatchToProps, ownPropsSelector) {
             return createConnectWorker(storeWorker, {
                 bridgeId,
                 mapDispatchToProps,
-                propsSelector,
+                ownPropsSelector,
             });
         },
     };

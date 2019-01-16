@@ -1,33 +1,25 @@
-import React from 'react';
+import { React, isEqual, isFn } from '../dependencies';
+
 import StoreWorkerBridge from '../utils/StoreWorkerBridge';
+import createActionCreators from '../utils/createActionCreators';
 
-import { createActionCreators } from './utils';
-
-// TODO: use some better utility
-function isEqual(a, b) {
-    return JSON.stringify(a) === JSON.stringify(b);
-}
-
-// TODO:
-// 'createConnectWorker' should be async.
-// It should create new bridge only if mapStateToProps selector was provided or null argument was explicitly passed instead.
-// Otherwise there is a risk of a race condition.
-const createConnectWorker = (storeWorker, { bridgeId, mapDispatchToProps, propsSelector }) => (
+const createConnectWorker = (storeWorker, { bridgeId, mapDispatchToProps, ownPropsSelector }) => (
     WrappedComponent,
     Loader,
 ) => {
+    const ownPropsSelectorProvided = isFn(ownPropsSelector);
     const signedStoreWorker = new StoreWorkerBridge(storeWorker, {
         bridgeId,
-        propsSelectorProvided: propsSelector !== undefined,
+        ownPropsSelectorProvided,
     });
 
-    const mapDispatchToPropsWithOwnProps = propsSelector && typeof mapDispatchToProps === 'function';
+    const mapDispatchToPropsWithOwnProps = ownPropsSelectorProvided && isFn(mapDispatchToProps);
 
     function getActionCreators(props) {
         return createActionCreators(
             signedStoreWorker.postAction,
             mapDispatchToProps,
-            mapDispatchToPropsWithOwnProps ? propsSelector(props) : undefined,
+            mapDispatchToPropsWithOwnProps ? ownPropsSelector(props) : undefined,
         );
     }
 
@@ -41,8 +33,8 @@ const createConnectWorker = (storeWorker, { bridgeId, mapDispatchToProps, propsS
         }
 
         componentDidMount() {
-            if (propsSelector) {
-                signedStoreWorker.setPropsSelector(() => propsSelector(this.props));
+            if (ownPropsSelectorProvided) {
+                signedStoreWorker.setOwnPropsSelector(() => ownPropsSelector(this.props));
             }
 
             signedStoreWorker.setStateObserver(data => {
@@ -59,8 +51,8 @@ const createConnectWorker = (storeWorker, { bridgeId, mapDispatchToProps, propsS
         componentWillUnmount() {
             signedStoreWorker.removeStateObserver();
 
-            if (propsSelector) {
-                signedStoreWorker.removePropsSelector();
+            if (ownPropsSelectorProvided) {
+                signedStoreWorker.removeOwnPropsSelector();
             }
         }
 

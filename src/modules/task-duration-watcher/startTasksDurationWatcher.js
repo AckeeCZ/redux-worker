@@ -1,8 +1,7 @@
-import messageTypes from '../services/messageTypesOut';
+import { messageOutTypes } from './dependencies';
+import Timeout from './utils/Timeout';
 
-import Timeout from './Timeout';
-
-function tasksDurationWatcher(worker, { taskDurationTimeout }) {
+export default function startTasksDurationWatcher(worker, { taskDurationTimeout }) {
     const notRespondingWorkerHandler = () => {
         // TODO: a developer should provide handler function for this event
         // anyway i am not sure if it should be provided in config method (e.g. `config/index.js`)
@@ -24,11 +23,11 @@ function tasksDurationWatcher(worker, { taskDurationTimeout }) {
         const message = event.data;
 
         switch (message.type) {
-            case messageTypes.SET_OPTIONS_COMPLETE:
+            case messageOutTypes.SET_OPTIONS_COMPLETE:
                 timeout.start();
                 break;
 
-            case messageTypes.WORKER_IS_RESPONDING:
+            case messageOutTypes.WORKER_IS_RESPONDING:
                 timeout.restart();
                 break;
 
@@ -45,5 +44,3 @@ function tasksDurationWatcher(worker, { taskDurationTimeout }) {
 
     return stopWatcher;
 }
-
-export default tasksDurationWatcher;

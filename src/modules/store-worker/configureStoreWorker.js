@@ -1,6 +1,5 @@
-import messageTypesIn from './services/messageTypesIn';
-import * as messagesOut from './services/messagesOut';
-import selector from './services/selectors';
+import { messagesOut, messageTypesIn, selector, launchTaskDurationWatcher, onContainerSelector } from './dependencies';
+import importAll from './utils/importAll';
 
 const createRequestComponentProps = bridgeId => () => {
     self.postMessage(messagesOut.requestComponentProps(bridgeId));
@@ -8,32 +7,17 @@ const createRequestComponentProps = bridgeId => () => {
 
 const unsubscribes = {};
 
-function launchTaskDurationWatcher(taskDurationWatcher) {
-    if (taskDurationWatcher.enabled) {
-        const workerIsResponding = messagesOut.workerIsResponding();
-        const sendReport = () => {
-            self.postMessage(workerIsResponding);
-        };
-
-        self.setInterval(sendReport, taskDurationWatcher.reportStatusInPeriod);
-    }
-}
-
-function importAll(context) {
-    return context.keys().map(context);
-}
-
-export const initMessageHandler = (configureStore, getContainerSelectors) => {
+export default function configureStoreWorker(configureStore, getContainerSelectors) {
     // import all mapStateToState selectors
     importAll(getContainerSelectors());
 
     const store = configureStore();
 
-    const stateChanged = ({ key, props }) => {
+    const stateChanged = ({ bridgeId, props }) => {
         const state = store.getState();
-        const nextState = selector(state, props, key);
+        const nextState = selector(state, props, bridgeId);
 
-        self.postMessage(messagesOut.stateChanged(key, nextState));
+        self.postMessage(messagesOut.stateChanged(bridgeId, nextState));
     };
 
     const createStateChanged = bridgeId => props => {
@@ -53,15 +37,17 @@ export const initMessageHandler = (configureStore, getContainerSelectors) => {
             }
 
             case messageTypesIn.SUBSCRIBE: {
-                const { propsSelectorProvided } = message.options;
-                const stateChangeHandler = propsSelectorProvided
-                    ? createRequestComponentProps(message.bridgeId)
-                    : createStateChanged(message.bridgeId);
+                const { options, bridgeId } = message;
+                const { ownPropsSelectorProvided } = options;
+                const stateChangeHandler = ownPropsSelectorProvided
+                    ? createRequestComponentProps(bridgeId)
+                    : createStateChanged(bridgeId);
 
-                unsubscribes[message.bridgeId] = store.subscribe(stateChangeHandler);
+                unsubscribes[bridgeId] = store.subscribe(stateChangeHandler);
 
-                // post initial message with initial state to hydrate the component
-                stateChangeHandler();
+                // Post initial message with initial state to hydrate the component.
+                // But only when the mapStateToProps selector is available
+                onContainerSelector(bridgeId, stateChangeHandler);
 
                 break;
             }
@@ -89,7 +75,8 @@ export const initMessageHandler = (configureStore, getContainerSelectors) => {
             }
 
             default:
+            // TODO: something like:
             // workerOnMessageHandler(store, message, self.postMessage);
         }
     };
-};
+}
