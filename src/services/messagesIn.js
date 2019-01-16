@@ -1,25 +1,25 @@
 import types from './messageTypesIn';
 
-export const dispatch = key => action => ({
+export const dispatch = bridgeId => action => ({
     type: types.DISPATCH,
-    key,
+    bridgeId,
     action,
 });
 
-export const subscribe = (key, options = {}) => ({
+export const subscribe = (bridgeId, options = {}) => ({
     type: types.SUBSCRIBE,
-    key,
+    bridgeId,
     options,
 });
 
-export const unsubscribe = key => ({
+export const unsubscribe = bridgeId => ({
     type: types.UNSUBSCRIBE,
-    key,
+    bridgeId,
 });
 
-export const sendComponentProps = (key, props) => ({
+export const sendComponentProps = (bridgeId, props) => ({
     type: types.SEND_COMPONENT_PROPS,
-    key,
+    bridgeId,
     props,
 });
 

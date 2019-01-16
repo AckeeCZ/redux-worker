@@ -1,4 +1,4 @@
-function Timeout(duration, onTimeoutEnd) {
+export default function Timeout(duration, onTimeoutEnd) {
     let id = null;
 
     const api = {
@@ -19,5 +19,3 @@ function Timeout(duration, onTimeoutEnd) {
 
     return api;
 }
-
-export default Timeout;

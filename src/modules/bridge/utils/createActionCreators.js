@@ -1,10 +1,12 @@
-export const createActionCreators = (dispatch, mapDispatchToProps) => {
+import { isFn } from '../dependencies';
+
+export default function createActionCreators(dispatch, mapDispatchToProps, ownProps) {
     if (mapDispatchToProps === undefined || mapDispatchToProps === null) {
         return {};
     }
 
-    if (typeof mapDispatchToProps === 'function') {
-        return mapDispatchToProps(dispatch);
+    if (isFn(mapDispatchToProps)) {
+        return mapDispatchToProps(dispatch, ownProps);
     }
 
     if (typeof mapDispatchToProps === 'object' && !Array.isArray(mapDispatchToProps)) {
@@ -22,4 +24,4 @@ export const createActionCreators = (dispatch, mapDispatchToProps) => {
     throw new TypeError(
         `mapDispatchToProps received invalid 1st argument, it must either a 'function' or an 'object', not '${typeof mapDispatchToProps}'.`,
     );
-};
+}

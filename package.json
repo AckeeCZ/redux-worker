@@ -1,5 +1,5 @@
 {
-    "name": "@ackee/react-redux-worker",
+    "name": "@ackee/redux-worker",
     "version": "0.0.1",
     "description": "",
     "main": "lib/index.js",
@@ -10,17 +10,19 @@
         "build:es": "rm -rf ./es && cross-env BABEL_ENV=es babel src --out-dir es",
         "build": "yarn run build:es & npm run build:lib",
         "prepare": "npm run build",
-        "start": "yarn install && yarn lint && yarn run build:es && onchange 'src/**/*.{js,jsx}' -- yarn run build:es",
+        "start": "yarn install && yarn run build:es && onchange 'src/**/*.{js,jsx}' -- yarn onChange",
+        "onChange": "yarn run build && yalc push",
         "lint": "eslint 'src/**/*.{js,jsx}'"
     },
     "author": "Jiří Čermák <jiri.cermak@ackee.cz>",
     "license": "MIT",
     "repository": {
         "type": "git",
-        "url": "https://github.com/AckeeCZ/react-redux-worker"
+        "url": "https://github.com/AckeeCZ/redux-worker"
     },
     "dependencies": {
         "@babel/runtime": "^7.2.0",
+        "lodash.isequal": "^4.5.0",
         "react-display-name": "^0.2.4",
         "redux": "4.x.x"
     },
@@ -39,14 +41,15 @@
         "@babel/preset-react": "^7.0.0",
         "babel-eslint": "^10.0.1",
         "cross-env": "^5.2.0",
-        "eslint": "^5.11.1",
+        "eslint": "^5.12.0",
         "eslint-config-ackee": "^0.9.1",
-        "eslint-config-prettier": "^3.3.0",
+        "eslint-config-prettier": "^3.4.0",
         "husky": "^1.3.1",
         "lint-staged": "^8.1.0",
         "onchange": "^5.2.0",
         "prettier": "^1.15.3",
-        "prettier-config-ackee": "0.0.11"
+        "prettier-config-ackee": "0.0.12",
+        "react": "^16.7.0"
     },
     "browserslist": [
         "last 2 version",

@@ -4,15 +4,15 @@ export const workerIsResponding = () => ({
     type: types.WORKER_IS_RESPONDING,
 });
 
-export const stateChanged = (key, data) => ({
+export const stateChanged = (bridgeId, data) => ({
     type: types.STATE_CHANGED,
-    key,
+    bridgeId,
     data,
 });
 
-export const requestComponentProps = key => ({
+export const requestComponentProps = bridgeId => ({
     type: types.REQUEST_COMPONENT_PROPS,
-    key,
+    bridgeId,
 });
 
 export const setOptionsComplete = () => ({

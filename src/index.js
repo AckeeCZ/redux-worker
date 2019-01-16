@@ -1,40 +1,24 @@
-import createConnectWorker from './HOC/createConnectWorker';
-import * as messagesIn from './services/messagesIn';
-import startTasksDurationWatcher from './utils/tasksDurationWatcher';
-import * as config from './config';
+export { default as configure } from './configure';
+export { configureStoreWorker } from './modules/store-worker';
+export { registerContainerSelector } from './services/selectors';
+export { default as uniqueId } from './utils/uniqueId';
 
-export const create = (storeWorker, customOptions) => {
-    const options = {
-        ...customOptions,
-        taskDurationWatcher: {
-            ...config.taskDurationWatcher,
-            ...customOptions.taskDurationWatcher,
-        },
-    };
+// reduxWorker.connect()
+// reduxWorker.terminate();
+// reduxWorker.restart();
 
-    if (options.taskDurationWatcher.enabled) {
-        startTasksDurationWatcher(storeWorker, {
-            taskDurationTimeout: options.taskDurationWatcher.unrespondingTimeout,
-        });
-    }
+// const unsubscribe = reduxWorker.on(
+// 	eventTypes.WORKER_IS_NOT_RESPONDING,
+// 	terminateWorker => {},
+// );
 
-    storeWorker.postMessage(messagesIn.setOptionsRequest(options));
+// # Event system
+// reduxWorker.on(eventTypes.MESSAGE_).then()
+// reduxWorker.on(eventTypes.MESSAGE_IN).then()
+// reduxWorker.on(eventTypes.MESSAGE_OUT).then()
+// reduxWorker.once(EVENT_NAME)
+// reduxWorker.off(eventTypes.MESSAGE_)
+// reduxWorker.off()
 
-    return {
-        connectWorker(id, mapDispatchToProps, propsSelector) {
-            return createConnectWorker({
-                id,
-                mapDispatchToProps,
-                propsSelector,
-                storeWorker,
-            });
-        },
-    };
-};
-
-export const on = (eventName, eventHandler) => {};
-
-export const off = listenerId => {};
-
-export { default as combineSelectors } from './utils/combineSelectors';
-export { initMessageHandler as configureStoreWorker } from './storeWorkerUtils';
+// await reduxWorker.enableTaskDurationWatcher();
+// await reduxWorker.disableTaskDurationWatcher();

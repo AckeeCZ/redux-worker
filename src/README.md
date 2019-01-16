@@ -17,7 +17,6 @@
 -   configureStore
     -   must return redux store
     -   NOTE: also imports root reducer, saga, setups middlewares and enhancers
--   path or import function to root selector
 
 ---
 
