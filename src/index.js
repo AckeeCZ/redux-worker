@@ -8,7 +8,7 @@ export const create = (storeWorker, customOptions) => {
         ...customOptions,
         taskDurationWatcher: {
             ...config.taskDurationWatcher,
-            ...customOptions.taskDurationWatcher,
+            ...(customOptions && customOptions.taskDurationWatcher),
         },
     };
 
@@ -21,9 +21,9 @@ export const create = (storeWorker, customOptions) => {
     storeWorker.postMessage(messagesIn.setOptionsRequest(options));
 
     return {
-        connectWorker(id, mapDispatchToProps, propsSelector) {
+        connectWorker(bridgeKey, mapDispatchToProps, propsSelector) {
             return createConnectWorker({
-                id,
+                bridgeKey,
                 mapDispatchToProps,
                 propsSelector,
                 storeWorker,
@@ -31,10 +31,32 @@ export const create = (storeWorker, customOptions) => {
         },
     };
 };
+// export const on = (eventName, eventHandler) => {};
 
-export const on = (eventName, eventHandler) => {};
-
-export const off = listenerId => {};
+// export const off = listenerId => {};
 
 export { default as combineSelectors } from './utils/combineSelectors';
-export { initMessageHandler as configureStoreWorker } from './storeWorkerUtils';
+export { initMessageHandler as configureStoreWorker } from './storeWorker';
+export { default as uniqueKey } from './utils/uniqueKey';
+
+export { registerContainerSelector } from './services/selectors';
+
+// reduxWebWorker.connect()
+// reduxWebWorker.terminate();
+// reduxWebWorker.restart();
+
+// const unsubscribe = ReduxWebWorker.on(
+// 	eventTypes.WORKER_IS_NOT_RESPONDING,
+// 	terminateWorker => {},
+// );
+
+// # Event system
+// ReduxWebWorker.on(eventTypes.MESSAGE_).then()
+// ReduxWebWorker.on(eventTypes.MESSAGE_IN).then()
+// ReduxWebWorker.on(eventTypes.MESSAGE_OUT).then()
+// ReduxWebWorker.once(EVENT_NAME)
+// ReduxWebWorker.off(eventTypes.MESSAGE_)
+// ReduxWebWorker.off()
+
+// await ReduxWebWorker.enableTaskDurationWatcher();
+// await ReduxWebWorker.disableTaskDurationWatcher();

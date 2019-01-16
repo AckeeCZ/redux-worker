@@ -6,6 +6,8 @@
 
 # Limitations
 
+## HMR aren't supported
+
 # Configuration
 
 # Usage examples

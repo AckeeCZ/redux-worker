@@ -1,26 +1,39 @@
 import messageTypesIn from './services/messageTypesIn';
 import * as messagesOut from './services/messagesOut';
+import selector from './services/selectors';
 
 const createRequestComponentProps = messageKey => () => {
-    postMessage(messagesOut.requestComponentProps(messageKey));
+    self.postMessage(messagesOut.requestComponentProps(messageKey));
 };
 
 const unsubscribes = {};
 
-function optionsChangedHandler(options) {
-    if (options.taskDurationWatcher.enabled) {
-        setInterval(() => {
-            postMessage(messagesOut.workerIsResponding());
-        }, options.taskDurationWatcher.reportStatusInPeriod);
+function launchTaskDurationWatcher(taskDurationWatcher) {
+    if (taskDurationWatcher.enabled) {
+        const workerIsResponding = messagesOut.workerIsResponding();
+        const sendReport = () => {
+            self.postMessage(workerIsResponding);
+        };
+
+        self.setInterval(sendReport, taskDurationWatcher.reportStatusInPeriod);
     }
 }
 
-export const initMessageHandler = ({ store, rootSelector }) => {
+function importAll(context) {
+    return context.keys().map(context);
+}
+
+export const initMessageHandler = (configureStore, getContainerSelectors) => {
+    // import all mapStateToState selectors
+    importAll(getContainerSelectors());
+
+    const store = configureStore();
+
     const stateChanged = ({ key, props }) => {
         const state = store.getState();
-        const nextState = rootSelector(state, props, key);
+        const nextState = selector(state, props, key);
 
-        postMessage(messagesOut.stateChanged(key, nextState));
+        self.postMessage(messagesOut.stateChanged(key, nextState));
     };
 
     const createStateChanged = messageKey => props => {
@@ -30,10 +43,8 @@ export const initMessageHandler = ({ store, rootSelector }) => {
         });
     };
 
-    onmessage = event => {
+    self.onmessage = event => {
         const message = event.data;
-
-        // console.log(message);
 
         switch (message.type) {
             case messageTypesIn.DISPATCH: {
@@ -72,8 +83,8 @@ export const initMessageHandler = ({ store, rootSelector }) => {
             }
 
             case messageTypesIn.SET_OPTIONS_REQUEST: {
-                optionsChangedHandler(message.options);
-                postMessage(messagesOut.setOptionsComplete());
+                launchTaskDurationWatcher(message.options.taskDurationWatcher);
+                self.postMessage(messagesOut.setOptionsComplete());
                 break;
             }
 
