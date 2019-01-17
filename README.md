@@ -54,12 +54,14 @@ $ npm i -S @ackee/redux-worker
 // ---------------------------------------
 import * as ReduxWorker from '@ackee/redux-worker';
 
-const storeWorker = new Worker('./Store.worker.js', {
-    type: 'module',
-    name: 'Store.worker', // optional, for easier debugging
-});
+const createStoreWorker = () => {
+    return new Worker('./Store.worker.js', {
+        type: 'module',
+        name: 'Store.worker', // optional, for easier debugging
+    });
+};
 
-const { connectWorker } = ReduxWorker.configure(storeWorker);
+const { connectWorker } = ReduxWorker.configure(createStoreWorker);
 
 export { connectWorker };
 ```
@@ -99,6 +101,34 @@ export default function getContainerSelecotors() {
     // NOTE: pathToRoot may be also a webpack alias
     return require.context('../../', true, /\.mapStateToProps\.js$/);
 }
+```
+
+## Examples
+
+### Rebooting unresponding store worker
+
+```js
+// ---------------------------------------
+//  config/redux-worker/index.js
+// ---------------------------------------
+import * as ReduxWorker from '@ackee/redux-worker';
+
+const createStoreWorker = () => {
+    return new Worker('./Store.worker.js', {
+        type: 'module',
+        name: 'Store.worker',
+    });
+};
+
+const { connectWorker, storeWorker } = ReduxWorker.configure(createStoreWorker);
+
+storeWorker.on(storeWorker.eventTypes.TASK_DURATION_TIMEOUT, async () => {
+    // worker is terminated, then immediately booted again, new redux store is created
+    // and therefore app is reseted to initial state
+    await storeWorker.reboot();
+});
+
+export { connectWorker };
 ```
 
 ---
