@@ -1,23 +1,15 @@
-import { messageOutTypes } from './dependencies';
+import { messageOutTypes, EMIT_KEY } from './dependencies';
 import Timeout from './utils/Timeout';
 
-export default function startTasksDurationWatcher(worker, { taskDurationTimeout }) {
-    const notRespondingWorkerHandler = () => {
-        // TODO: a developer should provide handler function for this event
-        // anyway i am not sure if it should be provided in config method (e.g. `config/index.js`)
-        // or dynamically by some another method (e.g. workerNotRespondingHandler())
-        const shouldRestart = window.confirm(`Store worker is not responding.\nIt'll restarted in the moment...`);
-
-        if (shouldRestart) {
-            worker.terminate();
-        }
-
-        // TODO: find out create new StoreWorker dynamically
-        // maybe use message channel for sending redux-like actions
-        // to control creating and terminating store and reinitializating the StoreWorkerBridge
+export default function startTasksDurationWatcher(storeWorker, { taskDurationTimeout, onRebootWorkerEnd }) {
+    const workerIsNotRespondingHandler = () => {
+        storeWorker.emit({
+            eventType: storeWorker.eventTypes.TASK_DURATION_TIMEOUT,
+            signature: EMIT_KEY,
+        });
     };
 
-    const timeout = new Timeout(taskDurationTimeout, notRespondingWorkerHandler);
+    const timeout = new Timeout(taskDurationTimeout, workerIsNotRespondingHandler);
 
     const messageHandler = event => {
         const message = event.data;
@@ -35,11 +27,17 @@ export default function startTasksDurationWatcher(worker, { taskDurationTimeout 
         }
     };
 
-    worker.addEventListener('message', messageHandler, false);
+    storeWorker.worker.on('message', messageHandler);
+
+    storeWorker.on(storeWorker.eventTypes.WORKER_TERMINATE, () => {
+        timeout.clear();
+    });
+
+    storeWorker.on(storeWorker.eventTypes.WORKER_START, onRebootWorkerEnd);
 
     const stopWatcher = () => {
         timeout.clear();
-        worker.removeEventListener('message', messageHandler, false);
+        storeWorker.worker.off('message', messageHandler);
     };
 
     return stopWatcher;

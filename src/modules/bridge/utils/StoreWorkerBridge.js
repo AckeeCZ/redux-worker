@@ -44,13 +44,16 @@ function StoreWorkerBridge(worker, { bridgeId, ownPropsSelectorProvided }) {
 
             handlers.stateObserver = stateObserverHandler;
 
-            worker.addEventListener('message', messageHandler, false);
-            worker.postMessage(messagesIn.subscribe(bridgeId, { ownPropsSelectorProvided }));
+            // The 3rd argument will be called everytime when 'messageHandler' is successfully registered.
+            // This is useful when worker is rebooted and all message handlers are registered again.
+            worker.on('message', messageHandler, () => {
+                worker.postMessage(messagesIn.subscribe(bridgeId, { ownPropsSelectorProvided }));
+            });
         },
 
         removeStateObserver() {
             if (handlers.stateObserver) {
-                worker.removeEventListener('message', messageHandler, false);
+                worker.off('message', messageHandler);
                 worker.postMessage(messagesIn.unsubscribe(bridgeId));
             }
         },
