@@ -8,10 +8,10 @@ export default {
     // if the store worker doesn't report itself
     // in 9s, then it's the worker is considered as non-responding
     // and it's terminated
-    unrespondingTimeout: 1000 * 6, // ms
+    unrespondingTimeout: 1000 * 4, // ms
 
     // how often should the store worker
     // report itself to the tasksDurationWatcher
     // (each report resets the unrespondingTimeout)
-    reportStatusInPeriod: 1000 * 4, // ms
+    reportStatusInPeriod: 1000 * 3, // ms
 };

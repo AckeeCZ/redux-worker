@@ -43,6 +43,7 @@ export default function selector(state, ownProps, bridgeId) {
         return mapStateToProps(state, ownProps, bridgeId);
     }
 
+    // eslint-disable-next-line
     console.error(`No 'mapStateToProps' selector was found for the '${bridgeId}' bridge ID.`);
 
     return state;
