@@ -99,7 +99,7 @@ export default function getContainerSelecotors() {
     // import all files that match the regex pattern (e.g. 'Counter.mapStateToProps.js')
     // require.context(pathToRoot, deepLookUp, regexPattern)
     // NOTE: pathToRoot may be also a webpack alias
-    return require.context('../../', true, /\.mapStateToProps\.js$/);
+    return require.context('../../', true, /\.selector\.js$/);
 }
 ```
 

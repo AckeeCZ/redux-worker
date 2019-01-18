@@ -15,7 +15,7 @@ function assertInput(bridgeId, mapStateToProps) {
     }
 }
 
-export function registerContainerSelector(bridgeId, mapStateToProps) {
+export function registerSelector(bridgeId, mapStateToProps) {
     assertInput(bridgeId, mapStateToProps);
 
     selectors.set(bridgeId, mapStateToProps);
