@@ -133,18 +133,17 @@ export default function WorkerAdapter(createWorker) {
             on(eventType, listener, afterListener) {
                 const namedHandlers = workerEventHandlers.get(eventType) || new EventHandler();
 
-                const success = namedHandlers.listeners.add(listener);
-
-                if (success) {
+                if (!namedHandlers.listeners.has(listener)) {
                     worker.addEventListener(eventType, listener, false);
+                    namedHandlers.listeners.add(listener);
                 }
-
-                workerEventHandlers.set(eventType, namedHandlers);
 
                 if (afterListener) {
                     namedHandlers.afterListeners.set(listener, afterListener);
                     afterListener();
                 }
+
+                workerEventHandlers.set(eventType, namedHandlers);
 
                 return () => this.off(eventType, listener);
             },
@@ -155,7 +154,11 @@ export default function WorkerAdapter(createWorker) {
 
                 namedHandlers.afterListeners.delete(listener);
 
-                return namedHandlers.listeners.delete(listener);
+                const success = namedHandlers.listeners.delete(listener);
+
+                workerEventHandlers.set(eventType, namedHandlers);
+
+                return success;
             },
             postMessage(...args) {
                 return worker.postMessage(...args);
