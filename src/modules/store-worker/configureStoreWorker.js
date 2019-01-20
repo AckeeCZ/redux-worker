@@ -13,7 +13,7 @@ export default function configureStoreWorker(configureStore, getContainerSelecto
 
     // TODO:
     // if (VERBOSE) {
-    console.log({ importedSelectors: selectors });
+    // console.info({ importedSelectors: selectors });
     // }
 
     const store = configureStore();
@@ -32,7 +32,7 @@ export default function configureStoreWorker(configureStore, getContainerSelecto
         });
     };
 
-    self.onmessage = event => {
+    self.addEventListener('message', event => {
         const message = event.data;
 
         switch (message.type) {
@@ -83,5 +83,5 @@ export default function configureStoreWorker(configureStore, getContainerSelecto
             // TODO: something like:
             // workerOnMessageHandler(store, message, self.postMessage);
         }
-    };
+    });
 }

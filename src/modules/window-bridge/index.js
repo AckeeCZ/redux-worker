@@ -1,0 +1,1 @@
+export { initializeWindowBridge } from './WindowBridge';

@@ -2,6 +2,7 @@ import * as messagesIn from './services/messagesIn';
 import mergeConfigs from './utils/mergeConfigs';
 import { isWorkerInitialized, initializeWorker, postMessageToWorker } from './modules/worker-adapter';
 import { startTasksDurationWatcher, config as taskDurationWatcherConfig } from './modules/task-duration-watcher';
+import { initializeWindowBridge } from './modules/window-bridge';
 
 const defaultConfig = {
     taskDurationWatcher: taskDurationWatcherConfig,
@@ -28,6 +29,8 @@ function initialize(createStoreWorker, customConfig) {
             onRebootWorkerEnd: postOptions,
         });
     }
+
+    initializeWindowBridge();
 }
 
 export default initialize;
