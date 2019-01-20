@@ -9,7 +9,12 @@ const unsubscribes = {};
 
 export default function configureStoreWorker(configureStore, getContainerSelectors) {
     // import all mapStateToState selectors
-    importAll(getContainerSelectors());
+    const selectors = importAll(getContainerSelectors());
+
+    // TODO:
+    // if (VERBOSE) {
+    console.log({ importedSelectors: selectors });
+    // }
 
     const store = configureStore();
 

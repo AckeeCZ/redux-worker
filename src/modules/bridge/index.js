@@ -1,1 +1,1 @@
-export { default as createConnectWorker } from './HOC/createConnectWorker';
+export { default as connectWorker } from './HOC/connectWorker';

@@ -1,12 +1,13 @@
-import { messageOutTypes, EMIT_KEY } from './dependencies';
+import { messageOutTypes, eventEmitter, eventTypes, addWorkerListener } from './dependencies';
 import Timeout from './utils/Timeout';
 
-export default function startTasksDurationWatcher(storeWorker, { taskDurationTimeout, onRebootWorkerEnd }) {
+export default function startTasksDurationWatcher({ taskDurationTimeout, onRebootWorkerEnd }) {
     const workerIsNotRespondingHandler = () => {
-        storeWorker.emit({
-            eventType: storeWorker.eventTypes.TASK_DURATION_TIMEOUT,
-            signature: EMIT_KEY,
-        });
+        if (process.env.NODE_ENV === 'development') {
+            console.error('Store worker is not responding.');
+        }
+
+        eventEmitter.emit(eventTypes.TASK_DURATION_TIMEOUT);
     };
 
     const timeout = new Timeout(taskDurationTimeout, workerIsNotRespondingHandler);
@@ -27,17 +28,17 @@ export default function startTasksDurationWatcher(storeWorker, { taskDurationTim
         }
     };
 
-    storeWorker.worker.on('message', messageHandler);
+    const removeMessageListener = addWorkerListener('message', messageHandler);
 
-    storeWorker.on(storeWorker.eventTypes.WORKER_TERMINATE, () => {
+    eventEmitter.on(eventTypes.WORKER_TERMINATE, () => {
         timeout.clear();
     });
 
-    storeWorker.on(storeWorker.eventTypes.WORKER_START, onRebootWorkerEnd);
+    eventEmitter.on(eventTypes.WORKER_START, onRebootWorkerEnd);
 
     const stopWatcher = () => {
         timeout.clear();
-        storeWorker.worker.off('message', messageHandler);
+        removeMessageListener();
     };
 
     return stopWatcher;

@@ -3,13 +3,9 @@ import { React, isEqual, isFn } from '../dependencies';
 import StoreWorkerBridge from '../utils/StoreWorkerBridge';
 import createActionCreators from '../utils/createActionCreators';
 
-const createConnectWorker = (storeWorker, { bridgeId, mapDispatchToProps, ownPropsSelector }) => (
-    WrappedComponent,
-    Loader,
-) => {
+const connectWorker = (bridgeId, mapDispatchToProps, ownPropsSelector) => (WrappedComponent, Loader) => {
     const ownPropsSelectorProvided = isFn(ownPropsSelector);
-    const signedStoreWorker = new StoreWorkerBridge(storeWorker, {
-        bridgeId,
+    const signedStoreWorker = new StoreWorkerBridge(bridgeId, {
         ownPropsSelectorProvided,
     });
 
@@ -77,4 +73,4 @@ const createConnectWorker = (storeWorker, { bridgeId, mapDispatchToProps, ownPro
     return StoreWorkerConnector;
 };
 
-export default createConnectWorker;
+export default connectWorker;
