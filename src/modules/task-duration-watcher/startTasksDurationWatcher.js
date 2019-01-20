@@ -4,7 +4,10 @@ import Timeout from './utils/Timeout';
 export default function startTasksDurationWatcher({ taskDurationTimeout, onRebootWorkerEnd }) {
     const workerIsNotRespondingHandler = () => {
         if (process.env.NODE_ENV === 'development') {
-            console.error('Store worker is not responding.');
+            // eslint-disable-next-line
+            console.info(
+                `'TASK_DURATION_TIMEOUT' event fired. The store worker didn't report itself to the main thread for ${taskDurationTimeout}ms.`,
+            );
         }
 
         eventEmitter.emit(eventTypes.TASK_DURATION_TIMEOUT);
@@ -28,17 +31,24 @@ export default function startTasksDurationWatcher({ taskDurationTimeout, onReboo
         }
     };
 
-    const removeMessageListener = addWorkerListener('message', messageHandler);
+    const unsubscribes = new Set();
 
-    eventEmitter.on(eventTypes.WORKER_TERMINATE, () => {
-        timeout.clear();
-    });
+    unsubscribes.add(addWorkerListener('message', messageHandler));
 
-    eventEmitter.on(eventTypes.WORKER_START, onRebootWorkerEnd);
+    unsubscribes.add(
+        eventEmitter.on(eventTypes.WORKER_TERMINATED, () => {
+            timeout.clear();
+        }),
+    );
+
+    unsubscribes.add(eventEmitter.on(eventTypes.WORKER_BOOTED, onRebootWorkerEnd));
 
     const stopWatcher = () => {
         timeout.clear();
-        removeMessageListener();
+
+        for (const unsubscribe of unsubscribes.values()) {
+            unsubscribe();
+        }
     };
 
     return stopWatcher;
