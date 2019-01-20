@@ -1,8 +1,16 @@
+import { isNonEmptyString, isSym } from './is';
+
 export const eventTypes = Object.freeze({
     WORKER_TERMINATED: Symbol('WORKER_TERMINATED'),
     WORKER_BOOTED: Symbol('WORKER_BOOTED'),
     TASK_DURATION_TIMEOUT: Symbol('TASK_DURATION_TIMEOUT'),
 });
+
+function validateEventType(eventType) {
+    if (!isNonEmptyString(eventType) && !isSym(eventType)) {
+        throw new TypeError(`'eventType' must a non-empty string or a symbol. Received value: ${eventType}.`);
+    }
+}
 
 export default class EventEmitter {
     constructor() {
@@ -10,6 +18,8 @@ export default class EventEmitter {
     }
 
     emit(eventType) {
+        validateEventType(eventType);
+
         const listeners = this.handlers.get(eventType) || new Set();
 
         for (const listener of listeners.values()) {
@@ -18,6 +28,8 @@ export default class EventEmitter {
     }
 
     on = (eventType, listener) => {
+        validateEventType(eventType);
+
         const listeners = this.handlers.get(eventType) || new Set();
 
         const success = listeners.add(listener);
@@ -30,6 +42,8 @@ export default class EventEmitter {
     };
 
     off = (eventType, listener) => {
+        validateEventType(eventType);
+
         if (!listener) {
             return this.handlers.delete(eventType);
         }

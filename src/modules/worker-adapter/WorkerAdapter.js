@@ -1,3 +1,5 @@
+import { isNonEmptyString } from './dependencies';
+
 import * as actions from './actions';
 import actionTypes from './actionTypes';
 
@@ -82,7 +84,15 @@ export function replaceWorker(nextWorker) {
     workerQueue = [];
 }
 
+function validateEventType(eventType) {
+    if (!isNonEmptyString(eventType)) {
+        throw new TypeError(`'eventType' must a non-empty string. Received value: ${eventType}.`);
+    }
+}
+
 export function off(eventType, listener) {
+    validateEventType(eventType);
+
     const namedHandlers = handlers.get(eventType);
 
     namedHandlers.afterListeners.delete(listener);
@@ -106,6 +116,8 @@ function EventHandlerEntity() {
 }
 
 export function on(eventType, listener, afterListener) {
+    validateEventType(eventType);
+
     const namedHandlers = handlers.get(eventType) || new EventHandlerEntity();
 
     if (!namedHandlers.listeners.has(listener)) {

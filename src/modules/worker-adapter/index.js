@@ -6,9 +6,13 @@ let workerCreator = null;
 export { off as removeWorkerListener, on as addWorkerListener, postMessage as postMessageToWorker };
 
 export async function bootWorker(nextWorkerCreator) {
+    if (!workerCreator && !isFn(nextWorkerCreator)) {
+        throw new TypeError(`bootWorker method requires 1st argument to be a function on its first call.`);
+    }
+
     if (typeof nextWorkerCreator !== 'undefined' && !isFn(nextWorkerCreator)) {
         throw new TypeError(
-            `storeWorker.boot: 1st argument must be 'undefined' or 'function', not a '${typeof nextWorkerCreator}'`,
+            `bootWorker: 1st argument must be 'undefined' or 'function', not a '${typeof nextWorkerCreator}'.`,
         );
     }
 
@@ -29,7 +33,7 @@ export async function terminateWorker(clearEventHandlers = false) {
     terminate(clearEventHandlers);
 }
 
-export async function rebootWorker({ nextWorkerCreator, clearEventHandlers }) {
+export async function rebootWorker({ nextWorkerCreator, clearEventHandlers } = {}) {
     await terminateWorker(clearEventHandlers);
     await bootWorker(nextWorkerCreator);
 }

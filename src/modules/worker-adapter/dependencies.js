@@ -1,2 +1,2 @@
 export { default as eventEmitter, eventTypes } from '../../config/eventEmitter';
-export { isFn } from '../../utils/is';
+export { isFn, isNonEmptyString, isSym } from '../../utils/is';
