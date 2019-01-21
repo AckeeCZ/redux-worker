@@ -42,8 +42,6 @@ $ npm i -S @ackee/redux-worker
 
 ## <a name="usage"></a>Usage
 
-#### <a name="configure"></a>`configure(storeWorker, config: Object) => Object`
-
 ---
 
 ### Initialization overview
@@ -61,9 +59,7 @@ const createStoreWorker = () => {
     });
 };
 
-const { connectWorker } = ReduxWorker.configure(createStoreWorker);
-
-export { connectWorker };
+ReduxWorker.initialize(createStoreWorker);
 ```
 
 ```js
@@ -96,14 +92,57 @@ export default function configureStore() {
 //  config/redux-worker/getContainerSelectors.js
 // ---------------------------------------
 export default function getContainerSelecotors() {
-    // import all files that match the regex pattern (e.g. 'Counter.mapStateToProps.js')
+    // import all files that match the regex pattern (e.g. 'Counter.selector.js')
     // require.context(pathToRoot, deepLookUp, regexPattern)
-    // NOTE: pathToRoot may be also a webpack alias
-    return require.context('../../', true, /\.selector\.js$/);
+    // NOTE:
+    // 1. pathToRoot may be also a webpack alias
+    // 2. The path must include also node_modules, if any of them uses `connectWorker` HOC
+    return require.context('../../../', true, /\.selector\.js$/);
 }
 ```
 
 ## Examples
+
+### Connecting to Redux state with `connectWorker` HOC
+
+```js
+// ---------------------------------------
+//  modules/counter/constants/index.js
+// ---------------------------------------
+import { uniqueId } from '@ackee/redux-worker';
+
+export const bridgeIds = {
+    COUNTER_BRIDGE: uniqueId('COUNTER_BRIDGE'),
+};
+
+// ---------------------------------------
+//  modules/counter/containers/Counter.js
+// ---------------------------------------
+import { connectWorker } from '@ackee/redux-worker';
+
+import { bridgeIds } from '../constants';
+import Counter from '../components/Counter';
+
+const mapDispatchToProps = dispatch => ({
+    // ...
+});
+
+export default connectWorker(bridgeIds.COUNTER_BRIDGE, mapDispatchToProps)(Counter);
+
+// ---------------------------------------
+//  containers/Counter.selector.js
+// ---------------------------------------
+import { registerSelector } from '@ackee/redux-worker';
+import { bridgeIds } from '../constants';
+
+const mapStateToProps = state => {
+    return {
+        // ...
+    };
+};
+
+registerSelector(bridgeIds.COUNTER_BRIDGE, mapStateToProps);
+```
 
 ### Rebooting unresponding store worker
 
@@ -120,15 +159,12 @@ const createStoreWorker = () => {
     });
 };
 
-const { connectWorker, storeWorker } = ReduxWorker.configure(createStoreWorker);
-
-storeWorker.on(storeWorker.eventTypes.TASK_DURATION_TIMEOUT, async () => {
+ReduxWorker.on(ReduxWorker.eventTypes.TASK_DURATION_TIMEOUT, async () => {
     // worker is terminated, then immediately booted again, new redux store is created
-    // and therefore app is reseted to initial state
-    await storeWorker.reboot();
+    await ReduxWorker.rebootWorker();
 });
 
-export { connectWorker };
+ReduxWorker.initialize(createStoreWorker);
 ```
 
 ---
