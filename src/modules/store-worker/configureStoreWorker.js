@@ -9,7 +9,12 @@ const unsubscribes = {};
 
 export default function configureStoreWorker(configureStore, getContainerSelectors) {
     // import all mapStateToState selectors
-    importAll(getContainerSelectors());
+    const selectors = importAll(getContainerSelectors());
+
+    // TODO:
+    // if (VERBOSE) {
+    // console.info({ importedSelectors: selectors });
+    // }
 
     const store = configureStore();
 
@@ -27,7 +32,7 @@ export default function configureStoreWorker(configureStore, getContainerSelecto
         });
     };
 
-    self.onmessage = event => {
+    self.addEventListener('message', event => {
         const message = event.data;
 
         switch (message.type) {
@@ -78,5 +83,5 @@ export default function configureStoreWorker(configureStore, getContainerSelecto
             // TODO: something like:
             // workerOnMessageHandler(store, message, self.postMessage);
         }
-    };
+    });
 }

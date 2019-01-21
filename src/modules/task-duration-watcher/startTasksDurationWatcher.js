@@ -1,12 +1,16 @@
-import { messageOutTypes, EMIT_KEY } from './dependencies';
+import { messageOutTypes, eventEmitter, eventTypes, addWorkerListener } from './dependencies';
 import Timeout from './utils/Timeout';
 
-export default function startTasksDurationWatcher(storeWorker, { taskDurationTimeout, onRebootWorkerEnd }) {
+export default function startTasksDurationWatcher({ taskDurationTimeout, onRebootWorkerEnd }) {
     const workerIsNotRespondingHandler = () => {
-        storeWorker.emit({
-            eventType: storeWorker.eventTypes.TASK_DURATION_TIMEOUT,
-            signature: EMIT_KEY,
-        });
+        if (process.env.NODE_ENV === 'development') {
+            // eslint-disable-next-line
+            console.info(
+                `'TASK_DURATION_TIMEOUT' event fired. The store worker didn't report itself to the main thread for ${taskDurationTimeout}ms.`,
+            );
+        }
+
+        eventEmitter.emit(eventTypes.TASK_DURATION_TIMEOUT);
     };
 
     const timeout = new Timeout(taskDurationTimeout, workerIsNotRespondingHandler);
@@ -27,17 +31,24 @@ export default function startTasksDurationWatcher(storeWorker, { taskDurationTim
         }
     };
 
-    storeWorker.worker.on('message', messageHandler);
+    const unsubscribes = new Set();
 
-    storeWorker.on(storeWorker.eventTypes.WORKER_TERMINATE, () => {
-        timeout.clear();
-    });
+    unsubscribes.add(addWorkerListener('message', messageHandler));
 
-    storeWorker.on(storeWorker.eventTypes.WORKER_START, onRebootWorkerEnd);
+    unsubscribes.add(
+        eventEmitter.on(eventTypes.WORKER_TERMINATED, () => {
+            timeout.clear();
+        }),
+    );
+
+    unsubscribes.add(eventEmitter.on(eventTypes.WORKER_BOOTED, onRebootWorkerEnd));
 
     const stopWatcher = () => {
         timeout.clear();
-        storeWorker.worker.off('message', messageHandler);
+
+        for (const unsubscribe of unsubscribes.values()) {
+            unsubscribe();
+        }
     };
 
     return stopWatcher;
