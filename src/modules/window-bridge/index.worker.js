@@ -3,7 +3,7 @@ import { executeInWindowRequest } from './services/messagesOut';
 let nextId = 0;
 
 export async function executeInWindow(pathToProperty, args) {
-    // TODO: this need to better optimized
+    // TODO: this needs to be better optimized
     const id = nextId++;
 
     const promise = new Promise(resolve => {
@@ -12,8 +12,6 @@ export async function executeInWindow(pathToProperty, args) {
 
             if (message.id === id) {
                 self.removeEventListener('message', handler);
-
-                // TODO: handle the message
 
                 resolve(message.payload);
             }

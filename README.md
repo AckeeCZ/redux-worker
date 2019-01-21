@@ -30,9 +30,9 @@ React bindings for Redux, where Redux is placed at Web Worker.
     -   [off](#api-window-off)
     -   [eventTypes](#api-window-eventTypes)
 -   [API - Worker context](#api-worker)
-    -   [configureStoreWorker](#api-api-worker-confifureStoreWorker)
-    -   [registerSelector](#api-api-worker-registerSelector)
-    -   [executeInWindow](#api-api-worker-executeInWindow)
+    -   [configureStoreWorker](#api-worker-confifureStoreWorker)
+    -   [registerSelector](#api-worker-registerSelector)
+    -   [executeInWindow](#api-worker-executeInWindow)
 -   [API - Unspecified context](#api)
     -   [uniqueId](#api-uniqueId)
 
@@ -234,6 +234,8 @@ ReduxWorker.initialize(createStoreWorker).then(() => {
 
 -   This method can be called only once, otherwise an error is thrown.
 -   The `connectWorker` HOC can be safely used before this method is called. But since the store worker isn't ready at that moment, nothing will be rendered and all incoming messages to the worker are going to be queued.
+
+---
 
 ### <a name="api-window-connectWorker"></a>`connectWorker(bridgeId, [mapDispatchToProps], [ownPropsSelector]): React.Component`
 

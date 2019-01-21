@@ -1,1 +1,1 @@
-export { addWorkerListener, postMessageToWorker } from '../worker-adapter';
+export { addMessageListener, postMessageToWorker } from '../worker-adapter';

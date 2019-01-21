@@ -1,9 +1,9 @@
 import { eventEmitter, eventTypes, isFn } from './dependencies';
-import { terminate, replaceWorker, off, on, postMessage } from './WorkerAdapter';
+import { terminate, replaceWorker, off, on, postMessage, addMessageListener } from './WorkerAdapter';
 
 let workerCreator = null;
 
-export { off as removeWorkerListener, on as addWorkerListener, postMessage as postMessageToWorker };
+export { off as removeWorkerListener, on as addWorkerListener, postMessage as postMessageToWorker, addMessageListener };
 
 export async function bootWorker(nextWorkerCreator) {
     if (!workerCreator && !isFn(nextWorkerCreator)) {

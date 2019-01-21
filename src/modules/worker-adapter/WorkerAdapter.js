@@ -136,6 +136,16 @@ export function on(eventType, listener, afterListener) {
     return () => off(eventType, listener);
 }
 
+export function addMessageListener(messageType, listener, afterListener) {
+    function handler({ data }) {
+        if (data && data.type === messageType) {
+            listener(data);
+        }
+    }
+
+    return on('message', handler, afterListener);
+}
+
 export function postMessage(...args) {
     dispatch(actions.postMessage(args));
 }

@@ -1,83 +1,52 @@
-import { addWorkerListener, postMessageToWorker } from './dependencies';
+import { addMessageListener, postMessageToWorker } from './dependencies';
 
 import { executeInWindowSuccess, executeInWindowFailure } from './services/messagesIn';
 import messageOutTypes from './services/messageOutTypes';
 
-function processWindowMethodExecution({ id, pathToProperty, args }) {
-    const propertyNames = pathToProperty.split('.');
-    const property = {
-        ref: null,
-        closestContext: window,
-    };
-    const lastIndex = propertyNames.length - 1;
+function getClosestContext(propertyNames) {
+    let closestContext = window;
 
-    // TODO: refactor this:
-    propertyNames.forEach((propertyName, index) => {
-        property.ref = property.closestContext[propertyName];
+    propertyNames.slice(0, propertyNames.length - 1).forEach((propertyName, index) => {
+        closestContext = closestContext[propertyName];
 
-        const isLast = index >= lastIndex;
+        if (closestContext === undefined) {
+            const validPart = propertyNames.slice(0, index).join('.');
+            const invalidPart = propertyNames.slice(index).join('.');
 
-        switch (typeof property.ref) {
-            case 'object': {
-                // move to a child property of currect context
-                if (isLast) {
-                    postMessageToWorker(executeInWindowSuccess(id, property.ref));
-                } else {
-                    property.closestContext = property.ref;
-                }
-
-                break;
-            }
-            case 'function': {
-                if (isLast) {
-                    // method found, call it with provided arguments
-                    // then send the result back
-                    const mayBePromise = property.ref.call(property.closestContext, ...args);
-
-                    Promise.resolve(mayBePromise).then(result => {
-                        postMessageToWorker(executeInWindowSuccess(id, result));
-                    });
-                } else {
-                    property.closestContext = property.ref;
-                }
-
-                break;
-            }
-
-            case 'undefined': {
-                if (isLast) {
-                    postMessageToWorker(executeInWindowSuccess(id, property.ref));
-                } else {
-                    // return special message, or don't create this 'case' block at all?
-                    // or throw an error? God knows.
-                    // TODO: error message
-                    const error = new Error('TODO');
-
-                    postMessageToWorker(executeInWindowFailure(id, error));
-                }
-
-                break;
-            }
-            default: {
-                if (isLast) {
-                    const value = property.ref;
-
-                    // NOTE: consider different action (_VALUE, instead of _RESULT)
-                    postMessageToWorker(executeInWindowSuccess(id, value));
-                } else {
-                    property.closestContext = property.ref;
-                }
-            }
+            throw new Error(
+                `executeInWindow: Invalid 'pathToProperty', valid part: '${validPart}', invalid part: '${invalidPart}'`,
+            );
         }
     });
+
+    return closestContext;
 }
 
-export function initializeWindowBridge() {
-    addWorkerListener('message', event => {
-        const message = event.data;
+async function processWindowMethodExecution({ id, pathToProperty, args }) {
+    try {
+        const propertyNames = pathToProperty.split('.');
+        const closestContext = getClosestContext(propertyNames);
+        const lastPropertyName = propertyNames[propertyNames.length - 1];
+        let result = closestContext[lastPropertyName];
 
-        if (message.type === messageOutTypes.EXECUTE_IN_WINDOW_REQUEST) {
-            processWindowMethodExecution(message);
+        if (typeof result === 'function') {
+            // method found, call it with provided arguments
+            // then send the result back
+            result = await result.call(closestContext, ...args);
         }
-    });
+
+        postMessageToWorker(executeInWindowSuccess(id, result));
+    } catch (e) {
+        // TODO: check if current logging mode includes 'error'
+        if (process.env.NODE_ENV === 'development') {
+            // eslint-disable-next-line
+            console.error(e);
+        }
+
+        postMessageToWorker(executeInWindowFailure(id, e.message));
+    }
+}
+
+export async function initializeWindowBridge() {
+    await addMessageListener(messageOutTypes.EXECUTE_IN_WINDOW_REQUEST, processWindowMethodExecution);
 }
