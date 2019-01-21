@@ -20,7 +20,21 @@ React bindings for Redux, where Redux is placed at Web Worker.
 
 -   [Installing](#installing)
 -   [Usage](#usage)
--   [API](#api)
+-   [API - Window context](#api-window)
+    -   [initialize](#api-window-initialize)
+    -   [connectWorker](#api-window-connectWorker)
+    -   [terminateWorker](#api-window-terminateWorker)
+    -   [bootWorker](#api-window-bootWorker)
+    -   [rebootWorker](#api-window-rebootWorker)
+    -   [on](#api-window-on)
+    -   [off](#api-window-off)
+    -   [eventTypes](#api-window-eventTypes)
+-   [API - Worker context](#api-worker)
+    -   [configureStoreWorker](#api-api-worker-confifureStoreWorker)
+    -   [registerSelector](#api-api-worker-registerSelector)
+    -   [executeInWindow](#api-api-worker-executeInWindow)
+-   [API - Unspecified context](#api)
+    -   [uniqueId](#api-uniqueId)
 
 ---
 
@@ -164,9 +178,122 @@ ReduxWorker.on(ReduxWorker.eventTypes.TASK_DURATION_TIMEOUT, async () => {
     await ReduxWorker.rebootWorker();
 });
 
-ReduxWorker.initialize(createStoreWorker);
+ReduxWorker.initialize(createStoreWorker, {
+    taskDurationWatcher: {
+        enabled: true,
+    },
+});
 ```
 
 ---
 
-## API
+## <a name="api-window"></a>API - Window context
+
+### <a name="api-window-initialize"></a>`async initialize(createStoreWorker, [config]): void`
+
+What does it do:
+
+-   Store worker is booted (Redux Store is created).
+-   An configuration object is created and sent to the worker.
+-   The task duration watcher is started.
+-   The window bridge is initialized (see [`executeInWindow`](#api-worker-executeInWindow) section).
+
+#### Parameters
+
+-   `createStoreWorker: Function` - Function that returns new store worker.
+-   `config: Object` optional with following defaults:
+
+    ```js
+    {
+        taskDurationWatcher: {
+            enabled: process.env.NODE_ENV !== 'development',
+
+            /* If the store worker doesn't report itself
+               in 4s to the main thread, then the worker is considered to be non-responding and the ReduxWorker.eventTypes.TASK_DURATION_TIMEOUT event is fired. */
+            unrespondingTimeout: 1000 * 4, // ms
+
+            /* How often should the store worker report itself to the tasksDurationWatcher module. Note that each report resets the unrespondingTimeout.
+            So reportStatusInPeriod + messageHopDelay <  unrespondingTimeout.
+            */
+            reportStatusInPeriod: 1000 * 3, // ms
+        }
+    }
+    ```
+
+#### Example
+
+```js
+// ...
+
+ReduxWorker.initialize(createStoreWorker).then(() => {
+    console.log('Store worker is ready');
+});
+```
+
+#### Notes
+
+-   This method can be called only once, otherwise an error is thrown.
+-   The `connectWorker` HOC can be safely used before this method is called. But since the store worker isn't ready at that moment, nothing will be rendered and all incoming messages to the worker are going to be queued.
+
+### <a name="api-window-connectWorker"></a>`connectWorker(bridgeId, [mapDispatchToProps], [ownPropsSelector]): React.Component`
+
+What does it do:
+
+-   Creates a new bridge to store worker.
+-   TODO
+
+#### Parameters
+
+-   `bridgeId: String` - An unique ID among other instances of `connectWorker`. See helper utility [`uniqueId`](#api-uniqueId)
+-   `mapDispatchToProps: Function|Object`
+    -   `Function`: 1st argument is dispatch method that send Redux actions to the store worker. 2nd argument is `ownProps` object which is returned from `ownPropSelector`.
+    -   `Object`: Properties are Redux action creators.
+-   `ownPropsSelector: Function` - Function that receives all component props and returns props that are only required in the `mapDispatchToProps` and `mapStateToProps` (e.g. `userId`).
+
+### Returns
+
+A React component wrapped by `connectWorker` HOC.
+
+#### Example
+
+```js
+// --------------------
+// Foo.js (main thread context)
+// --------------------
+import { connectWorker } from '@ackee/redux-worker';
+import Foo from '../components/Foo';
+
+const mapDispatchToProps = (dispatch, selectedOwnProps) => ({
+    // ...
+});
+
+const ownPropSelector = componentProps => ({
+    // ...
+});
+
+// The mapStateToProps selector is placed at `Foo.selector.js` file
+export default connectWorker('FOO_BRIDGE', mapDispatchToProps, ownPropsSelector)(Foo);
+```
+
+```js
+// --------------------
+// Foo.selector.js (worker context)
+// --------------------
+import { registerSelector } from '@ackee/redux-worker';
+
+const mapStateToProps = (state, selectedOwnProps) => ({
+    // ...
+});
+
+registerSelector('FOO_BRIDGE', mapStateToProps);
+```
+
+## API - Worker context
+
+### <a name="api-worker-registerSelector"></a>`registerSelector(bridgeId, mapStateToProps): void`
+
+### <a name="api-worker-executeInWindow"></a>`async executeInWindow(pathToProperty, [args]): any`
+
+## API - unspecified context
+
+### <a name="api-uniqueId"></a>`unqiueId(void): String`
