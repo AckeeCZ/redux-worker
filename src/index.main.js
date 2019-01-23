@@ -1,12 +1,20 @@
 import eventEmitter, { eventTypes } from './config/eventEmitter';
+import { WorkerThread } from './modules/worker-adapter/main';
 
-export { default as initialize } from './initialize';
+const { addMessageListener, boot, postMessage, reboot, removeMessageListener, terminate } = WorkerThread;
 
-export { connectWorker } from './modules/bridge/main';
-
-export { WorkerThread as storeWorker } from './modules/worker-adapter/main';
+export const storeWorker = Object.freeze({
+    addMessageListener,
+    boot,
+    postMessage,
+    reboot,
+    removeMessageListener,
+    terminate,
+});
 
 export const { on, off } = eventEmitter;
 export { eventTypes };
 
 export { logLevels } from './constants';
+export { default as initialize } from './initialize';
+export { connectWorker } from './modules/bridge/main';
