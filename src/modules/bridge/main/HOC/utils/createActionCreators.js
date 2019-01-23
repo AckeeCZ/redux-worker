@@ -1,4 +1,4 @@
-import { isFn } from '../dependencies';
+import { isFn } from '../../dependencies';
 
 export default function createActionCreators(dispatch, mapDispatchToProps, ownProps) {
     if (mapDispatchToProps === undefined || mapDispatchToProps === null) {

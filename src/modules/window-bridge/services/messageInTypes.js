@@ -1,3 +1,0 @@
-export default {
-    EXECUTE_IN_WINDOW_RESPONSE: 'EXECUTE_IN_WINDOW_RESPONSE',
-};

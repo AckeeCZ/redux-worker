@@ -1,4 +1,4 @@
-import { messageOutTypes, eventEmitter, eventTypes, addWorkerListener } from './dependencies';
+import { messageOutTypes, eventEmitter, eventTypes, WorkerThread } from './dependencies';
 import Timeout from './utils/Timeout';
 
 export default function startTasksDurationWatcher({ taskDurationTimeout, onRebootWorkerEnd }) {
@@ -15,9 +15,7 @@ export default function startTasksDurationWatcher({ taskDurationTimeout, onReboo
 
     const timeout = new Timeout(taskDurationTimeout, workerIsNotRespondingHandler);
 
-    const messageHandler = event => {
-        const message = event.data;
-
+    const messageHandler = message => {
         switch (message.type) {
             case messageOutTypes.SET_OPTIONS_COMPLETE:
                 timeout.start();
@@ -33,7 +31,12 @@ export default function startTasksDurationWatcher({ taskDurationTimeout, onReboo
 
     const unsubscribes = new Set();
 
-    unsubscribes.add(addWorkerListener('message', messageHandler));
+    unsubscribes.add(
+        WorkerThread.addMessageListener(
+            [messageOutTypes.SET_OPTIONS_COMPLETE, messageOutTypes.WORKER_IS_RESPONDING],
+            messageHandler,
+        ),
+    );
 
     unsubscribes.add(
         eventEmitter.on(eventTypes.WORKER_TERMINATED, () => {

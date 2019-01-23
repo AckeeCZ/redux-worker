@@ -36,7 +36,7 @@ export function onContainerSelector(bridgeId, handler) {
     }
 }
 
-export default function selector(state, ownProps, bridgeId) {
+export function rootSelector(state, ownProps, bridgeId) {
     const mapStateToProps = selectors.get(bridgeId);
 
     if (mapStateToProps) {
