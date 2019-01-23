@@ -1,4 +1,4 @@
-import types from './messageOutTypes';
+import { messageTypes as types } from './dependencies';
 
 export const executeInWindowSuccess = (id, payload, error) => ({
     type: types.EXECUTE_IN_WINDOW_SUCCESS,

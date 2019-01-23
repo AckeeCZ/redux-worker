@@ -1,8 +1,16 @@
-import { messagesOut, messageTypesIn, selector, launchTaskDurationWatcher, onContainerSelector } from './dependencies';
+import {
+    messagesOut,
+    messageTypesIn,
+    rootSelector,
+    launchTaskDurationWatcher,
+    onContainerSelector,
+    MainThread,
+    ALL_MESSAGES,
+} from './dependencies';
 import importAll from './utils/importAll';
 
 const createRequestComponentProps = bridgeId => () => {
-    self.postMessage(messagesOut.requestComponentProps(bridgeId));
+    MainThread.postMessage(messagesOut.requestComponentProps(bridgeId));
 };
 
 const unsubscribes = {};
@@ -13,16 +21,16 @@ export default function configureStoreWorker(configureStore, getContainerSelecto
 
     // TODO:
     // if (VERBOSE) {
-    // console.info({ importedSelectors: selectors });
+    //      console.info({ importedSelectors: selectors });
     // }
 
     const store = configureStore();
 
     const stateChanged = ({ bridgeId, props }) => {
         const state = store.getState();
-        const nextState = selector(state, props, bridgeId);
+        const nextState = rootSelector(state, props, bridgeId);
 
-        self.postMessage(messagesOut.stateChanged(bridgeId, nextState));
+        MainThread.postMessage(messagesOut.stateChanged(bridgeId, nextState));
     };
 
     const createStateChanged = bridgeId => props => {
@@ -32,9 +40,7 @@ export default function configureStoreWorker(configureStore, getContainerSelecto
         });
     };
 
-    self.addEventListener('message', event => {
-        const message = event.data;
-
+    MainThread.addMessageListener(ALL_MESSAGES, message => {
         switch (message.type) {
             case messageTypesIn.DISPATCH: {
                 store.dispatch(message.action);
@@ -80,8 +86,6 @@ export default function configureStoreWorker(configureStore, getContainerSelecto
             }
 
             default:
-            // TODO: something like:
-            // workerOnMessageHandler(store, message, self.postMessage);
         }
     });
 }

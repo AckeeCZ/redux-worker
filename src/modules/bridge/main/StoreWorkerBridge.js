@@ -1,4 +1,4 @@
-import { messagesIn, messageTypesOut, postMessageToWorker, addWorkerListener } from '../dependencies';
+import { messagesIn, messageTypesOut, WorkerThread } from './dependencies';
 
 function StoreWorkerBridge(bridgeId, { ownPropsSelectorProvided }) {
     const handlers = {
@@ -8,13 +8,7 @@ function StoreWorkerBridge(bridgeId, { ownPropsSelectorProvided }) {
 
     const dispatch = messagesIn.dispatch(bridgeId);
 
-    const messageHandler = event => {
-        const message = event.data;
-
-        if (message.bridgeId !== bridgeId) {
-            return;
-        }
-
+    const messageHandler = message => {
         switch (message.type) {
             case messageTypesOut.STATE_CHANGED:
                 handlers.stateObserver(message.data);
@@ -22,7 +16,7 @@ function StoreWorkerBridge(bridgeId, { ownPropsSelectorProvided }) {
 
             case messageTypesOut.REQUEST_COMPONENT_PROPS: {
                 const selectedProps = handlers.ownPropsSelector();
-                postMessageToWorker(messagesIn.sendComponentProps(bridgeId, selectedProps));
+                WorkerThread.postMessage(messagesIn.sendComponentProps(bridgeId, selectedProps));
                 break;
             }
 
@@ -31,6 +25,9 @@ function StoreWorkerBridge(bridgeId, { ownPropsSelectorProvided }) {
     };
 
     let unsubscribeMessageHandler = null;
+
+    const messageTypes = new Set([messageTypesOut.STATE_CHANGED, messageTypesOut.REQUEST_COMPONENT_PROPS]);
+    const messageMatcher = message => message.bridgeId === bridgeId && messageTypes.has(message.type);
 
     const api = {
         /*
@@ -49,20 +46,20 @@ function StoreWorkerBridge(bridgeId, { ownPropsSelectorProvided }) {
 
             // The 3rd argument will be called everytime when 'messageHandler' is successfully registered.
             // This is useful when worker is rebooted and all message handlers are registered again.
-            unsubscribeMessageHandler = addWorkerListener('message', messageHandler, () => {
-                postMessageToWorker(messagesIn.subscribe(bridgeId, { ownPropsSelectorProvided }));
+            unsubscribeMessageHandler = WorkerThread.addMessageListener(messageMatcher, messageHandler, () => {
+                WorkerThread.postMessage(messagesIn.subscribe(bridgeId, { ownPropsSelectorProvided }));
             });
         },
 
         removeStateObserver() {
             if (handlers.stateObserver) {
                 unsubscribeMessageHandler();
-                postMessageToWorker(messagesIn.unsubscribe(bridgeId));
+                WorkerThread.postMessage(messagesIn.unsubscribe(bridgeId));
             }
         },
 
         postAction(action) {
-            postMessageToWorker(dispatch(action));
+            WorkerThread.postMessage(dispatch(action));
         },
 
         setOwnPropsSelector(ownPropsSelector) {

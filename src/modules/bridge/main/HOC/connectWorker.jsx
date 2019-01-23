@@ -1,7 +1,7 @@
 import { React, isEqual, isFn } from '../dependencies';
 
-import StoreWorkerBridge from '../utils/StoreWorkerBridge';
-import createActionCreators from '../utils/createActionCreators';
+import StoreWorkerBridge from '../StoreWorkerBridge';
+import createActionCreators from './utils/createActionCreators';
 
 const connectWorker = (bridgeId, mapDispatchToProps, ownPropsSelector) => (WrappedComponent, Loader) => {
     const ownPropsSelectorProvided = isFn(ownPropsSelector);

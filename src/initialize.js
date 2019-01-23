@@ -1,8 +1,9 @@
 import * as messagesIn from './services/messagesIn';
 import mergeConfigs from './utils/mergeConfigs';
-import { isWorkerInitialized, initializeWorker, postMessageToWorker } from './modules/worker-adapter';
-import { startTasksDurationWatcher, config as taskDurationWatcherConfig } from './modules/task-duration-watcher';
-import { initializeWindowBridge } from './modules/window-bridge';
+
+import { WorkerThread } from './modules/worker-adapter/main';
+import { startTasksDurationWatcher, config as taskDurationWatcherConfig } from './modules/task-duration-watcher/main';
+import { initializeWindowBridge } from './modules/window-bridge/main';
 
 const defaultConfig = {
     taskDurationWatcher: taskDurationWatcherConfig,
@@ -11,14 +12,14 @@ const defaultConfig = {
 function initialize(createStoreWorker, customConfig) {
     const options = mergeConfigs(defaultConfig, customConfig);
 
-    if (isWorkerInitialized()) {
+    if (WorkerThread.isInitialized()) {
         throw new Error(`redux-worker: The 'initialize' can't be called more than once.`);
     }
 
-    initializeWorker(createStoreWorker);
+    WorkerThread.initialize(createStoreWorker);
 
     const postOptions = () => {
-        postMessageToWorker(messagesIn.setOptionsRequest(options));
+        WorkerThread.postMessage(messagesIn.setOptionsRequest(options));
     };
 
     postOptions();

@@ -1,7 +1,6 @@
-import { addMessageListener, postMessageToWorker } from './dependencies';
+import { WorkerThread, messageTypes } from './dependencies';
 
-import { executeInWindowSuccess, executeInWindowFailure } from './services/messagesIn';
-import messageOutTypes from './services/messageOutTypes';
+import { executeInWindowSuccess, executeInWindowFailure } from './messages';
 
 function getClosestContext(propertyNames) {
     let closestContext = window;
@@ -35,7 +34,7 @@ async function processWindowMethodExecution({ id, pathToProperty, args }) {
             result = await result.call(closestContext, ...args);
         }
 
-        postMessageToWorker(executeInWindowSuccess(id, result));
+        WorkerThread.postMessage(executeInWindowSuccess(id, result));
     } catch (e) {
         // TODO: check if current logging mode includes 'error'
         if (process.env.NODE_ENV === 'development') {
@@ -43,10 +42,15 @@ async function processWindowMethodExecution({ id, pathToProperty, args }) {
             console.error(e);
         }
 
-        postMessageToWorker(executeInWindowFailure(id, e.message));
+        WorkerThread.postMessage(executeInWindowFailure(id, e.message));
     }
 }
 
-export async function initializeWindowBridge() {
-    await addMessageListener(messageOutTypes.EXECUTE_IN_WINDOW_REQUEST, processWindowMethodExecution);
+export function initializeWindowBridge() {
+    const unsubscribe = WorkerThread.addMessageListener(
+        messageTypes.EXECUTE_IN_WINDOW_REQUEST,
+        processWindowMethodExecution,
+    );
+
+    return unsubscribe;
 }
