@@ -1,5 +1,6 @@
 import * as messagesIn from './services/messagesIn';
 import mergeConfigs from './utils/mergeConfigs';
+import * as Logger from './utils/logger';
 
 import { WorkerThread } from './modules/worker-adapter/main';
 import { startTasksDurationWatcher, config as taskDurationWatcherConfig } from './modules/task-duration-watcher/main';
@@ -30,6 +31,8 @@ function initialize(createStoreWorker, customConfig) {
             onRebootWorkerEnd: postOptions,
         });
     }
+
+    Logger.setLogLevel(options.logLevel);
 
     initializeWindowBridge();
 }

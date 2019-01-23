@@ -1,4 +1,4 @@
-import { WorkerThread, messageTypes } from './dependencies';
+import { WorkerThread, messageTypes, Logger } from './dependencies';
 
 import { executeInWindowSuccess, executeInWindowFailure } from './messages';
 
@@ -36,11 +36,7 @@ async function processWindowMethodExecution({ id, pathToProperty, args }) {
 
         WorkerThread.postMessage(executeInWindowSuccess(id, result));
     } catch (e) {
-        // TODO: check if current logging mode includes 'error'
-        if (process.env.NODE_ENV === 'development') {
-            // eslint-disable-next-line
-            console.error(e);
-        }
+        Logger.error(e);
 
         WorkerThread.postMessage(executeInWindowFailure(id, e.message));
     }

@@ -6,6 +6,7 @@ import {
     onContainerSelector,
     MainThread,
     ALL_MESSAGES,
+    Logger,
 } from './dependencies';
 import importAll from './utils/importAll';
 
@@ -19,10 +20,7 @@ export default function configureStoreWorker(configureStore, getContainerSelecto
     // import all mapStateToState selectors
     const selectors = importAll(getContainerSelectors());
 
-    // TODO:
-    // if (VERBOSE) {
-    //      console.info({ importedSelectors: selectors });
-    // }
+    Logger.info(`Imported selectors count: ${selectors.length}, selectors:`, selectors);
 
     const store = configureStore();
 
@@ -80,8 +78,10 @@ export default function configureStoreWorker(configureStore, getContainerSelecto
             }
 
             case messageTypesIn.SET_OPTIONS_REQUEST: {
-                launchTaskDurationWatcher(message.options.taskDurationWatcher);
-                self.postMessage(messagesOut.setOptionsComplete());
+                const { taskDurationWatcher, logLevel } = message.options;
+                launchTaskDurationWatcher(taskDurationWatcher);
+                Logger.setLogLevel(logLevel);
+                MainThread.postMessage(messagesOut.setOptionsComplete());
                 break;
             }
 

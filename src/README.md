@@ -12,6 +12,8 @@
 
 # API References
 
+# Migration guides from `react-redux` to `redux-worker`
+
 # Required config props
 
 -   configureStore
