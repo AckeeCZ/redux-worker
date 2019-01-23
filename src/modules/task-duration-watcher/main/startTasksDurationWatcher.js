@@ -1,14 +1,11 @@
-import { messageOutTypes, eventEmitter, eventTypes, WorkerThread } from './dependencies';
+import { messageOutTypes, eventEmitter, eventTypes, WorkerThread, Logger } from './dependencies';
 import Timeout from './utils/Timeout';
 
 export default function startTasksDurationWatcher({ taskDurationTimeout, onRebootWorkerEnd }) {
     const workerIsNotRespondingHandler = () => {
-        if (process.env.NODE_ENV === 'development') {
-            // eslint-disable-next-line
-            console.info(
-                `'TASK_DURATION_TIMEOUT' event fired. The store worker didn't report itself to the main thread for ${taskDurationTimeout}ms.`,
-            );
-        }
+        Logger.info(
+            `'TASK_DURATION_TIMEOUT' event fired. The store worker didn't report itself to the main thread for ${taskDurationTimeout}ms.`,
+        );
 
         eventEmitter.emit(eventTypes.TASK_DURATION_TIMEOUT);
     };

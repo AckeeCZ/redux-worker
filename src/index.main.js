@@ -8,3 +8,5 @@ export { WorkerThread as storeWorker } from './modules/worker-adapter/main';
 
 export const { on, off } = eventEmitter;
 export { eventTypes };
+
+export { logLevels } from './constants';

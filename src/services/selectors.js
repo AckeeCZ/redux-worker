@@ -1,4 +1,5 @@
 import { isFn } from '../utils/is';
+import * as Logger from '../utils/logger';
 
 const selectors = new Map();
 const listeners = new Map();
@@ -43,8 +44,7 @@ export function rootSelector(state, ownProps, bridgeId) {
         return mapStateToProps(state, ownProps, bridgeId);
     }
 
-    // eslint-disable-next-line
-    console.error(`No 'mapStateToProps' selector was found for the '${bridgeId}' bridge ID.`);
+    Logger.error(`No 'mapStateToProps' selector was found for the '${bridgeId}' bridge ID.`);
 
     return state;
 }
