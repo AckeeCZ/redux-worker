@@ -28,20 +28,27 @@ React bindings for Redux, where Redux is placed at Web Worker.
 
 ---
 
+> ### Current Limitations
+>
+> -   Import files (container selectors in our case) with `require.context` is really easy, but really slow solution. Particularly, when we need to search for those files also in `node_modules`. This may be solved with a Webpack plugin.
+
+---
+
 ## Table of contents
 
 -   [Installing](#installing)
 -   [Core Concepts](#core-concepts)
 -   [Usage](#usage)
--   [API - Window context](#api-window)
-    -   [initialize](#api-window-initialize)
-    -   [connectWorker](#api-window-connectWorker)
--   [API - Worker context](#api-worker)
-    -   [configureStoreWorker](#api-worker-confifureStoreWorker)
-    -   [registerSelector](#api-worker-registerSelector)
-    -   [executeInWindow](#api-worker-executeInWindow)
--   [API - Unspecified context](#api)
-    -   [uniqueId](#api-uniqueId)
+-   API
+    -   [Window context](#api-window)
+        -   [initialize](#api-window-initialize)
+        -   [connectWorker](#api-window-connectWorker)
+    -   [Worker context](#api-worker)
+        -   [configureStoreWorker](#api-worker-confifureStoreWorker)
+        -   [registerSelector](#api-worker-registerSelector)
+        -   [executeInWindow](#api-worker-executeInWindow)
+    -   [Common](#api)
+        -   [uniqueId](#api-uniqueId)
 
 ---
 
@@ -139,7 +146,9 @@ import { uniqueId } from '@ackee/redux-worker';
 export const bridgeIds = {
     COUNTER_BRIDGE: uniqueId('COUNTER_BRIDGE'),
 };
+```
 
+```js
 // ---------------------------------------
 //  modules/counter/containers/Counter.js
 // ---------------------------------------
@@ -153,7 +162,9 @@ const mapDispatchToProps = dispatch => ({
 });
 
 export default connectWorker(bridgeIds.COUNTER_BRIDGE, mapDispatchToProps)(Counter);
+```
 
+```js
 // ---------------------------------------
 //  containers/Counter.selector.js
 // ---------------------------------------
@@ -315,6 +326,16 @@ registerSelector('FOO_BRIDGE', mapStateToProps);
 ### <a name="api-worker-registerSelector"></a>`registerSelector(bridgeId: String, mapStateToProps: Function): void`
 
 Add a container selector to global selectors register.
+
+```js
+import { registerSelector } from '@ackee/redux-worker';
+
+const mapStateToProps = state => ({
+    // ...
+});
+
+registerSelector('BRIDGE_ID', mapStateToProps);
+```
 
 ### <a name="api-worker-executeInWindow"></a>`async executeInWindow(pathToProperty: String, args:Array?): any`
 
