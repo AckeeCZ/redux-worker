@@ -1,4 +1,4 @@
-import { logLevels, logLevelEnum } from './constants';
+import { logLevels, logLevelEnum, MESSAGE_PREFIX } from './constants';
 import { logger } from './config';
 
 let logLevel = null;
@@ -19,13 +19,13 @@ function log(level, args) {
 
     switch (level) {
         case 1:
-            logger.error(...args);
+            logger.error(MESSAGE_PREFIX, ...args);
             break;
         case 2:
-            logger.warn(...args);
+            logger.warn(MESSAGE_PREFIX, ...args);
             break;
         case 3:
-            logger.log(...args);
+            logger.log(MESSAGE_PREFIX, ...args);
             break;
         default:
     }

@@ -10,3 +10,5 @@ export const logLevelEnum = {
     production: logLevels.SILENT,
     [undefined]: logLevels.ERROR,
 };
+
+export const MESSAGE_PREFIX = '[redux-worker]: ';
