@@ -1,8 +1,8 @@
-import { logLevels } from '../constants';
+import { logLevels, logLevelEnum } from './constants';
+import { logger } from './config';
 
 let logLevel = null;
 let queue = [];
-const logger = console;
 
 function validateLogLevel(nextLogLevel) {
     const validLogLevels = Object.values(logLevels);
@@ -59,4 +59,6 @@ const error = createLogMessageLevel(logLevels.ERROR);
 const warn = createLogMessageLevel(logLevels.WARN);
 const info = createLogMessageLevel(logLevels.INFO);
 
-export { setLogLevel, error, warn, info };
+const defaultLogLevel = logLevelEnum[process.env.NODE];
+
+export { setLogLevel, logLevels, error, warn, info, defaultLogLevel };

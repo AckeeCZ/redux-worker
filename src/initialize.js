@@ -1,14 +1,12 @@
 import * as messagesIn from './services/messagesIn';
 import mergeConfigs from './utils/mergeConfigs';
-import * as Logger from './utils/logger';
 
 import { WorkerThread } from './modules/worker-adapter/main';
-import { startTasksDurationWatcher, config as taskDurationWatcherConfig } from './modules/task-duration-watcher/main';
+import { startTasksDurationWatcher } from './modules/task-duration-watcher/main';
 import { initializeWindowBridge } from './modules/window-bridge/main';
+import * as Logger from './modules/logger';
 
-const defaultConfig = {
-    taskDurationWatcher: taskDurationWatcherConfig,
-};
+import defaultConfig from './config/defaultConfig';
 
 function initialize(createStoreWorker, customConfig) {
     const options = mergeConfigs(defaultConfig, customConfig);
