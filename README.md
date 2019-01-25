@@ -8,27 +8,34 @@ React bindings for Redux, where Redux is placed at Web Worker.
 
 ### Main features
 
--   ...
+-   #### Always responsive UI
 
-> ### Requirements
+    All business logic (reducers, sagas, selectors) is placed at worker thread, so the main thread isn't blocked by those opererations and is freed for UI.
+
+-   #### Handling of long-runnning tasks
+
+    If worker thread isn't responding to the main thread for certain amount time, the `TASK_DURATION_TIMEOUT` event is fired. The worker thread can be then terminated or rebooted. **No need for page reload**.
+
+-   #### Limited access of the `window` object in worker context
+    If you need access the window object in worker thread, you can use [`executeInWindow`](#api-worker-executeInWindow) async. method, e.g.:<br>
+    `const innerHeight = await executeInWindow('innerHeight')`;
+
+---
+
+> ### Knowledge requirements
 >
-> ...
+> You should known [React](https://reactjs.org/) and [Redux](https://redux.js.org/introduction/getting-started). But you don't need to know anything about Web Workers.
 
 ---
 
 ## Table of contents
 
 -   [Installing](#installing)
+-   [Core Concepts](#core-concepts)
 -   [Usage](#usage)
 -   [API - Window context](#api-window)
     -   [initialize](#api-window-initialize)
     -   [connectWorker](#api-window-connectWorker)
-    -   [terminateWorker](#api-window-terminateWorker)
-    -   [bootWorker](#api-window-bootWorker)
-    -   [rebootWorker](#api-window-rebootWorker)
-    -   [on](#api-window-on)
-    -   [off](#api-window-off)
-    -   [eventTypes](#api-window-eventTypes)
 -   [API - Worker context](#api-worker)
     -   [configureStoreWorker](#api-worker-confifureStoreWorker)
     -   [registerSelector](#api-worker-registerSelector)
@@ -54,70 +61,74 @@ $ npm i -S @ackee/redux-worker
 
 ---
 
+## <a name="core-concepts"></a>Core Concepts
+
+> TODO
+
 ## <a name="usage"></a>Usage
 
----
+### Implement `redux-worker` to your project
 
-### Initialization overview
+-   Add [`worker-plugin`](https://github.com/GoogleChromeLabs/worker-plugin) to your Webpack configuration.
 
-```js
-// ---------------------------------------
-//  config/redux-worker/index.js
-// ---------------------------------------
-import * as ReduxWorker from '@ackee/redux-worker';
+-   Create filed called `getSelectors.js` with the code below:
 
-const createStoreWorker = () => {
-    return new Worker('./Store.worker.js', {
-        type: 'module',
-        name: 'Store.worker', // optional, for easier debugging
+    ```js
+    export default function getContainerSelectors() {
+        // import all files that match the regex pattern (e.g. 'Counter.selector.js')
+        // The path must also include node_modules (if any of them uses `connectWorker` HOC)
+
+        // require.context(pathToRoot, deepLookUp, regexPattern)
+        return require.context('../../../', true, /\.selector\.js$/);
+    }
+    ```
+
+-   Create file called `configureStore.js` with function that returns the Redux Store:
+
+    ```js
+    import { createStore } from 'redux';
+
+    const rootReducer = (state, action) => state;
+
+    export default function configureStore() {
+        // The simplest Redux store.
+        return createStore(rootReducer);
+    }
+    ```
+
+-   Create file called `Store.worker.js` with the code below:
+
+    ```js
+    import { configureStoreWorker } from '@ackee/redux-worker/worker';
+
+    import configureStore from './createStore';
+    import getSelectors from './getSelectors';
+
+    configureStoreWorker({
+        configureStore,
+        getSelectors,
     });
-};
+    ```
 
-ReduxWorker.initialize(createStoreWorker);
-```
+-   Create file called `configureReduxWorker.js` with the code below:
 
-```js
-// ---------------------------------------
-//  config/redux-worker/Store.worker.js
-// ---------------------------------------
-import { configureStoreWorker } from '@ackee/redux-worker';
+    ```js
+    import * as ReduxWorker from '@ackee/redux-worker/main';
 
-import configureStore from './createStore';
-import getContainerSelector from './getContainerSelectors';
+    const createStoreWorker = () => {
+        // NOTE: Path to the web worker we've created earlier.
+        return new Worker('./Store.worker.js', {
+            type: 'module',
+            name: 'Store.worker', // optional, for easier debugging
+        });
+    };
 
-configureStoreWorker(configureStore, getContainerSelector);
-```
-
-```js
-// ---------------------------------------
-//  config/redux-worker/configureStore.js
-// ---------------------------------------
-import { createStore } from 'redux';
-
-const rootReducer = (state, action) => state;
-
-export default function configureStore() {
-    return createStore(rootReducer);
-}
-```
-
-```js
-// ---------------------------------------
-//  config/redux-worker/getContainerSelectors.js
-// ---------------------------------------
-export default function getContainerSelecotors() {
-    // import all files that match the regex pattern (e.g. 'Counter.selector.js')
-    // require.context(pathToRoot, deepLookUp, regexPattern)
-    // NOTE:
-    // 1. pathToRoot may be also a webpack alias
-    // 2. The path must include also node_modules, if any of them uses `connectWorker` HOC
-    return require.context('../../../', true, /\.selector\.js$/);
-}
-```
+    ReduxWorker.initialize(createStoreWorker);
+    ```
 
 ## Examples
 
-### Connecting to Redux state with `connectWorker` HOC
+### Connecting to Redux Store with `connectWorker` HOC
 
 ```js
 // ---------------------------------------
@@ -132,7 +143,7 @@ export const bridgeIds = {
 // ---------------------------------------
 //  modules/counter/containers/Counter.js
 // ---------------------------------------
-import { connectWorker } from '@ackee/redux-worker';
+import { connectWorker } from '@ackee/redux-worker/main';
 
 import { bridgeIds } from '../constants';
 import Counter from '../components/Counter';
@@ -146,7 +157,7 @@ export default connectWorker(bridgeIds.COUNTER_BRIDGE, mapDispatchToProps)(Count
 // ---------------------------------------
 //  containers/Counter.selector.js
 // ---------------------------------------
-import { registerSelector } from '@ackee/redux-worker';
+import { registerSelector } from '@ackee/redux-worker/worker';
 import { bridgeIds } from '../constants';
 
 const mapStateToProps = state => {
@@ -164,7 +175,7 @@ registerSelector(bridgeIds.COUNTER_BRIDGE, mapStateToProps);
 // ---------------------------------------
 //  config/redux-worker/index.js
 // ---------------------------------------
-import * as ReduxWorker from '@ackee/redux-worker';
+import * as ReduxWorker from '@ackee/redux-worker/main';
 
 const createStoreWorker = () => {
     return new Worker('./Store.worker.js', {
@@ -175,7 +186,7 @@ const createStoreWorker = () => {
 
 ReduxWorker.on(ReduxWorker.eventTypes.TASK_DURATION_TIMEOUT, async () => {
     // worker is terminated, then immediately booted again, new redux store is created
-    await ReduxWorker.rebootWorker();
+    await ReduxWorker.storeWorker.reboot();
 });
 
 ReduxWorker.initialize(createStoreWorker, {
@@ -201,10 +212,19 @@ What does it do:
 #### Parameters
 
 -   `createStoreWorker: Function` - Function that returns new store worker.
--   `config: Object` optional with following defaults:
+-   `config: Object` - Optional, with following defaults:
 
     ```js
     {
+        /*
+            const logLevelEnum = {
+                development: logLevels.INFO,
+                production: logLevels.SILENT,
+                [undefined]: logLevels.ERROR,
+            };
+        */
+        logLevel: logLevelEnum[process.env.NODE],
+
         taskDurationWatcher: {
             enabled: process.env.NODE_ENV !== 'development',
 
@@ -237,12 +257,12 @@ ReduxWorker.initialize(createStoreWorker).then(() => {
 
 ---
 
-### <a name="api-window-connectWorker"></a>`connectWorker(bridgeId, [mapDispatchToProps], [ownPropsSelector]): React.Component`
+### <a name="api-window-connectWorker"></a>`connectWorker(bridgeId, mapDispatchToProps?, ownPropsSelector?): (ConnectedComponent, Loader?): React.Component`
 
 What does it do:
 
--   Creates a new bridge to store worker.
--   TODO
+-   It connects to Redux store which is placed at a Web Worker. This happens on `componentDidMount`.
+-   It disconnects from Redux store on `componentWillUnmount`.
 
 #### Parameters
 
@@ -262,7 +282,7 @@ A React component wrapped by `connectWorker` HOC.
 // --------------------
 // Foo.js (main thread context)
 // --------------------
-import { connectWorker } from '@ackee/redux-worker';
+import { connectWorker } from '@ackee/redux-worker/main';
 import Foo from '../components/Foo';
 
 const mapDispatchToProps = (dispatch, selectedOwnProps) => ({
@@ -281,7 +301,7 @@ export default connectWorker('FOO_BRIDGE', mapDispatchToProps, ownPropsSelector)
 // --------------------
 // Foo.selector.js (worker context)
 // --------------------
-import { registerSelector } from '@ackee/redux-worker';
+import { registerSelector } from '@ackee/redux-worker/worker';
 
 const mapStateToProps = (state, selectedOwnProps) => ({
     // ...
@@ -292,10 +312,48 @@ registerSelector('FOO_BRIDGE', mapStateToProps);
 
 ## API - Worker context
 
-### <a name="api-worker-registerSelector"></a>`registerSelector(bridgeId, mapStateToProps): void`
+### <a name="api-worker-registerSelector"></a>`registerSelector(bridgeId: String, mapStateToProps: Function): void`
 
-### <a name="api-worker-executeInWindow"></a>`async executeInWindow(pathToProperty, [args]): any`
+Add a container selector to global selectors register.
 
-## API - unspecified context
+### <a name="api-worker-executeInWindow"></a>`async executeInWindow(pathToProperty: String, args:Array?): any`
 
-### <a name="api-uniqueId"></a>`unqiueId(void): String`
+```js
+import { executeInWindow } from '@ackee/redux-worker/worker';
+
+async function accessWindowObjectInWorker() {
+    const innerWidth = await executeInWindow('innerWidth');
+
+    console.log(innerWidth);
+}
+
+async function goBack() {
+    await executeInWindow('history.back');
+}
+
+async function storeToSessionStorage() {
+    await executeInWindow('sessionStorage.setItem', ['message', 'hello world']);
+
+    const message = await executeInWindow('sessionStorage.getItem', ['message']);
+
+    console.log(message); // > 'hello world'
+}
+```
+
+## API - shared context
+
+### <a name="api-uniqueId"></a>`unqiueId(prefix?): String`
+
+Get unique string ID, optionally with custom prefix. The uniqueness is guaranteed under the same context.
+
+> The purpose of this utility is to generate bridge IDs for `connectWorker` HOC and `registerSelector` method.
+
+#### Example
+
+```js
+import { uniqueId } from '@ackee/redux-worker';
+
+uniqueId(); // > 'rs'
+uniqueId('COUNTER_BRIDGE'); // > 'COUNTER_BRIDGE_rt'
+uniqueId('COUNTER_BRIDGE'); // > 'COUNTER_BRIDGE_ru'
+```
