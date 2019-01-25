@@ -8,15 +8,15 @@ React bindings for Redux, where Redux is placed at Web Worker.
 
 ### Main features
 
--   #### Always responsive UI
+-   #### ⚡️ Always responsive UI
 
     All business logic (reducers, sagas, selectors) is placed at worker thread, so the main thread isn't blocked by those opererations and is freed for UI.
 
--   #### Handling of long-runnning tasks
+-   #### ⏲ Handling of long-runnning tasks
 
     If worker thread isn't responding to the main thread for certain amount time, the `TASK_DURATION_TIMEOUT` event is fired. The worker thread can be then terminated or rebooted. **No need for page reload**.
 
--   #### Limited access of the `window` object in worker context
+-   #### 🐌 At least limited access to the `window` object in worker context
     If you need access the window object in worker thread, you can use [`executeInWindow`](#api-worker-executeInWindow) async. method, e.g.:<br>
     `const innerHeight = await executeInWindow('innerHeight')`;
 
@@ -30,7 +30,7 @@ React bindings for Redux, where Redux is placed at Web Worker.
 
 > ### Current Limitations
 >
-> -   Import files (container selectors in our case) with `require.context` is really easy, but really slow solution. Particularly, when we need to search for those files also in `node_modules`. This may be solved with a Webpack plugin.
+> -   Import files (container selectors in our case) with `require.context` is really easy, but really slow. Particularly, when we need to search for those files also in `node_modules`. This may be solved with a Webpack plugin.
 
 ---
 
@@ -137,48 +137,54 @@ $ npm i -S @ackee/redux-worker
 
 ### Connecting to Redux Store with `connectWorker` HOC
 
-```js
-// ---------------------------------------
-//  modules/counter/constants/index.js
-// ---------------------------------------
-import { uniqueId } from '@ackee/redux-worker';
+1. Create new bridge ID for this container:
 
-export const bridgeIds = {
-    COUNTER_BRIDGE: uniqueId('COUNTER_BRIDGE'),
-};
-```
+    ```js
+    // ---------------------------------------
+    //  modules/counter/constants/index.js
+    // ---------------------------------------
+    import { uniqueId } from '@ackee/redux-worker';
 
-```js
-// ---------------------------------------
-//  modules/counter/containers/Counter.js
-// ---------------------------------------
-import { connectWorker } from '@ackee/redux-worker/main';
-
-import { bridgeIds } from '../constants';
-import Counter from '../components/Counter';
-
-const mapDispatchToProps = dispatch => ({
-    // ...
-});
-
-export default connectWorker(bridgeIds.COUNTER_BRIDGE, mapDispatchToProps)(Counter);
-```
-
-```js
-// ---------------------------------------
-//  containers/Counter.selector.js
-// ---------------------------------------
-import { registerSelector } from '@ackee/redux-worker/worker';
-import { bridgeIds } from '../constants';
-
-const mapStateToProps = state => {
-    return {
-        // ...
+    export const bridgeIds = {
+        COUNTER_BRIDGE: uniqueId('COUNTER_BRIDGE'),
     };
-};
+    ```
 
-registerSelector(bridgeIds.COUNTER_BRIDGE, mapStateToProps);
-```
+2. Create container component with that ID:
+
+    ```js
+    // ---------------------------------------
+    //  modules/counter/containers/Counter.js
+    // ---------------------------------------
+    import { connectWorker } from '@ackee/redux-worker/main';
+
+    import { bridgeIds } from '../constants';
+    import Counter from '../components/Counter';
+
+    const mapDispatchToProps = dispatch => ({
+        // ...
+    });
+
+    export default connectWorker(bridgeIds.COUNTER_BRIDGE, mapDispatchToProps)(Counter);
+    ```
+
+3. Create special file for `mapStateToProps` and use that ID:
+
+    ```js
+    // ---------------------------------------
+    //  containers/Counter.selector.js
+    // ---------------------------------------
+    import { registerSelector } from '@ackee/redux-worker/worker';
+    import { bridgeIds } from '../constants';
+
+    const mapStateToProps = state => {
+        return {
+            // ...
+        };
+    };
+
+    registerSelector(bridgeIds.COUNTER_BRIDGE, mapStateToProps);
+    ```
 
 ### Rebooting unresponding store worker
 
@@ -344,7 +350,6 @@ import { executeInWindow } from '@ackee/redux-worker/worker';
 
 async function accessWindowObjectInWorker() {
     const innerWidth = await executeInWindow('innerWidth');
-
     console.log(innerWidth);
 }
 
@@ -356,7 +361,6 @@ async function storeToSessionStorage() {
     await executeInWindow('sessionStorage.setItem', ['message', 'hello world']);
 
     const message = await executeInWindow('sessionStorage.getItem', ['message']);
-
     console.log(message); // > 'hello world'
 }
 ```
