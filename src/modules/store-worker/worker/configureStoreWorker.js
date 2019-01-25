@@ -16,11 +16,31 @@ const createRequestComponentProps = bridgeId => () => {
 
 const unsubscribes = {};
 
-export default function configureStoreWorker(configureStore, getContainerSelectors) {
-    // import all mapStateToState selectors
-    const selectors = importAll(getContainerSelectors());
+function setOptionsHandler(message) {
+    const { taskDurationWatcher, logLevel } = message.options;
 
-    Logger.info(`Imported selectors count: ${selectors.length}, selectors:`, selectors);
+    launchTaskDurationWatcher(taskDurationWatcher);
+
+    Logger.setLogLevel(logLevel);
+
+    MainThread.postMessage(messagesOut.setOptionsComplete());
+}
+
+function unsubscribeHandler(message) {
+    const { bridgeId } = message;
+    const unsubscribeStateObserver = unsubscribes[bridgeId];
+
+    if (unsubscribeStateObserver) {
+        delete unsubscribes[bridgeId];
+        unsubscribeStateObserver();
+    }
+}
+
+export default function configureStoreWorker({ configureStore, getSelectors }) {
+    // import all mapStateToState selectors
+    const selectors = importAll(getSelectors());
+
+    Logger.info(`Number of imported selectors: ${selectors.length}, selectors:`, selectors);
 
     const store = configureStore();
 
@@ -62,13 +82,7 @@ export default function configureStoreWorker(configureStore, getContainerSelecto
             }
 
             case messageTypesIn.UNSUBCRIBE: {
-                const { bridgeId } = message;
-                const unsubscribe = unsubscribes[bridgeId];
-
-                if (unsubscribe) {
-                    delete unsubscribes[bridgeId];
-                    unsubscribe();
-                }
+                unsubscribeHandler(message);
                 break;
             }
 
@@ -78,10 +92,7 @@ export default function configureStoreWorker(configureStore, getContainerSelecto
             }
 
             case messageTypesIn.SET_OPTIONS_REQUEST: {
-                const { taskDurationWatcher, logLevel } = message.options;
-                launchTaskDurationWatcher(taskDurationWatcher);
-                Logger.setLogLevel(logLevel);
-                MainThread.postMessage(messagesOut.setOptionsComplete());
+                setOptionsHandler(message);
                 break;
             }
 

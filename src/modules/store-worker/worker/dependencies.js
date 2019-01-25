@@ -5,4 +5,4 @@ export { rootSelector, onContainerSelector } from '../../../services/selectors';
 export { launchTaskDurationWatcher } from '../../task-duration-watcher/worker';
 export { MainThread } from '../../worker-adapter/worker';
 export { ALL_MESSAGES } from '../../worker-adapter';
-export * as Logger from '../../../utils/logger';
+export * as Logger from '../../logger';
