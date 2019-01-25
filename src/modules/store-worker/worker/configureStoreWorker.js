@@ -1,14 +1,13 @@
 import {
     messagesOut,
     messageTypesIn,
-    rootSelector,
     launchTaskDurationWatcher,
-    onContainerSelector,
     MainThread,
     ALL_MESSAGES,
     Logger,
 } from './dependencies';
 import importAll from './utils/importAll';
+import { rootSelector, onContainerSelector } from './selectors';
 
 const createRequestComponentProps = bridgeId => () => {
     MainThread.postMessage(messagesOut.requestComponentProps(bridgeId));

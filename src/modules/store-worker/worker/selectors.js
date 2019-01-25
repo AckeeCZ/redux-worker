@@ -1,5 +1,4 @@
-import { isFn } from '../utils/is';
-import * as Logger from '../utils/logger';
+import { Logger, isFn } from './dependencies';
 
 const selectors = new Map();
 const listeners = new Map();

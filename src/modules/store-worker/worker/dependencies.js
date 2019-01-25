@@ -1,6 +1,6 @@
 export { default as messageTypesIn } from '../../../services/messageTypesIn';
 export * as messagesOut from '../../../services/messagesOut';
-export { rootSelector, onContainerSelector } from '../../../services/selectors';
+export { isFn } from '../../../utils/is';
 
 export { launchTaskDurationWatcher } from '../../task-duration-watcher/worker';
 export { MainThread } from '../../worker-adapter/worker';
